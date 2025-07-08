@@ -2,8 +2,12 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+import pandas as pd
 
-# Professional CSS Framework
+# Professional CSS Framework - Enhanced version
 PROFESSIONAL_CSS = """
 <style>
     /* Import modern fonts */
@@ -16,13 +20,7 @@ PROFESSIONAL_CSS = """
     
     /* Header styles */
     .app-header {
-                    {"icon": "📂", "label": "Bảng Điều Khiển", "page": "pages/1_🧮_Bang_Dieu_Khien.py"},
-            {"icon": "📊", "label": "Chi Tiết Bộ Dữ Liệu", "page": "pages/3_📂_Chi_Tiet_Bo_Du_Lieu.py"},
-            {"icon": "📈", "label": "Biểu Đồ Thông Minh", "page": "pages/6_📈_Bieu_Do_Thong_Minh.py"},
-            {"icon": "📋", "label": "Lịch Sử Biểu Đồ", "page": "pages/4_📊_Lich_Su_Bieu_Do.py"},
-            {"icon": "🔗", "label": "Phân Tích Chéo", "page": "pages/7_🔗_Phan_Tich_Cheo_Du_Lieu.py"},
-            {"icon": "📄", "label": "Báo Cáo EDA", "page": "pages/5_📋_Bao_Cao_EDA.py"},
-            {"icon": "📖", "label": "Về Dự Án", "page": "pages/📖_Ve_Du_An.py"}und: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 2rem;
         border-radius: 15px;
         color: white;
@@ -49,7 +47,7 @@ PROFESSIONAL_CSS = """
         50% { transform: translateY(-10px); }
     }
     
-    /* Card components */
+    /* Enhanced card components */
     .feature-card {
         background: white;
         padding: 2rem;
@@ -78,7 +76,86 @@ PROFESSIONAL_CSS = """
         border-radius: 4px 0 0 4px;
     }
     
-    /* Metric cards */
+    /* Recommendation card styling */
+    .recommendation-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .recommendation-card:hover {
+        border-color: #667eea;
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+        transform: translateY(-1px);
+    }
+    
+    .recommendation-card.high-priority {
+        border-left-color: #dc3545;
+        background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+    }
+    
+    .recommendation-card.medium-priority {
+        border-left-color: #ffc107;
+        background: linear-gradient(135deg, #fffbf0 0%, #feebc8 100%);
+    }
+    
+    .recommendation-card.low-priority {
+        border-left-color: #28a745;
+        background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+    }
+    
+    /* Chart container styling */
+    .chart-container {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
+        border: 1px solid #e1e5e9;
+        margin: 1rem 0;
+        position: relative;
+    }
+    
+    .chart-container::before {
+        content: '📊';
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        font-size: 1.2rem;
+        opacity: 0.5;
+    }
+    
+    /* Loading animation */
+    .loading-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        margin: 1rem 0;
+    }
+    
+    .loading-spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin-right: 1rem;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    /* Enhanced metric cards */
     .metric-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 1.5rem;
@@ -88,6 +165,24 @@ PROFESSIONAL_CSS = """
         box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         margin: 0.5rem 0;
         transition: transform 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: shimmer 3s ease-in-out infinite;
+    }
+    
+    @keyframes shimmer {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(180deg); }
     }
     
     .metric-card:hover {
@@ -98,6 +193,8 @@ PROFESSIONAL_CSS = """
         font-size: 2.5rem;
         font-weight: 700;
         margin-bottom: 0.5rem;
+        position: relative;
+        z-index: 1;
     }
     
     .metric-label {
@@ -105,6 +202,79 @@ PROFESSIONAL_CSS = """
         opacity: 0.9;
         text-transform: uppercase;
         letter-spacing: 1px;
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Insight cards with enhanced styling */
+    .insight-card {
+        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+        border: 1px solid #667eea30;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        position: relative;
+        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
+    }
+    
+    .insight-card::before {
+        content: '💡';
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        font-size: 1.2rem;
+        background: #667eea;
+        padding: 0.3rem;
+        border-radius: 50%;
+        color: white;
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .insight-content {
+        margin-left: 3rem;
+    }
+    
+    /* Enhanced button styling */
+    .recommendation-button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .recommendation-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .recommendation-button::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        transition: width 0.6s, height 0.6s, top 0.6s, left 0.6s;
+    }
+    
+    .recommendation-button:active::before {
+        width: 300px;
+        height: 300px;
+        top: -150px;
+        left: -150px;
     }
     
     /* Status indicators */
@@ -117,6 +287,7 @@ PROFESSIONAL_CSS = """
         font-weight: 500;
         display: inline-block;
         margin: 0.25rem;
+        box-shadow: 0 2px 8px rgba(86, 204, 242, 0.3);
     }
     
     .status-warning {
@@ -128,6 +299,7 @@ PROFESSIONAL_CSS = """
         font-weight: 500;
         display: inline-block;
         margin: 0.25rem;
+        box-shadow: 0 2px 8px rgba(255, 185, 70, 0.3);
     }
     
     .status-error {
@@ -139,75 +311,17 @@ PROFESSIONAL_CSS = """
         font-weight: 500;
         display: inline-block;
         margin: 0.25rem;
+        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
     }
     
-    /* Insight cards */
-    .insight-card {
-        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-        border: 1px solid #667eea30;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 1rem 0;
-        position: relative;
-    }
-    
-    .insight-card::before {
-        content: '💡';
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-        font-size: 1.2rem;
-    }
-    
-    .insight-content {
-        margin-left: 2rem;
-    }
-    
-    /* Chart containers */
-    .chart-container {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 15px rgba(0,0,0,0.05);
-        border: 1px solid #e1e5e9;
-        margin: 1rem 0;
-    }
-    
-    /* Navigation styling */
-    .nav-item {
-        padding: 0.75rem 1rem;
-        margin: 0.25rem 0;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        border: 1px solid transparent;
-    }
-    
-    .nav-item:hover {
-        background: #667eea10;
-        border-color: #667eea;
-        transform: translateX(4px);
-    }
-    
-    .nav-item.active {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-    }
-    
-    /* Data table styling */
-    .dataframe {
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-    }
-    
-    /* Progress indicators */
+    /* Progress bars */
     .progress-bar {
         background: #f0f2f5;
         border-radius: 10px;
         height: 8px;
         overflow: hidden;
         margin: 1rem 0;
+        position: relative;
     }
     
     .progress-fill {
@@ -215,54 +329,24 @@ PROFESSIONAL_CSS = """
         background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
         border-radius: 10px;
         transition: width 0.3s ease;
+        position: relative;
+        overflow: hidden;
     }
     
-    /* Custom selectbox styling */
-    .stSelectbox > div > div {
-        background-color: #f8f9fa;
-        border: 1px solid #e1e5e9;
-        border-radius: 8px;
+    .progress-fill::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        animation: shimmer-progress 2s infinite;
     }
     
-    .stSelectbox > div > div:focus-within {
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-    
-    /* Custom button styling */
-    .stButton > button {
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    
-    .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-    }
-    
-    .stButton > button[kind="primary"]:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    }
-    
-    /* Animation utilities */
-    .fade-in {
-        animation: fadeIn 0.6s ease-in;
-    }
-    
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .slide-in {
-        animation: slideIn 0.8s ease-out;
-    }
-    
-    @keyframes slideIn {
-        from { transform: translateX(-100%); }
-        to { transform: translateX(0); }
+    @keyframes shimmer-progress {
+        0% { left: -100%; }
+        100% { left: 100%; }
     }
     
     /* Dark mode support */
@@ -278,10 +362,29 @@ PROFESSIONAL_CSS = """
             border-color: #333;
         }
         
-        .stSelectbox > div > div {
-            background-color: #2e2e2e;
-            border-color: #444;
+        .recommendation-card {
+            background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+            border-color: #4a5568;
             color: #e1e1e1;
+        }
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .app-header {
+            padding: 1rem;
+        }
+        
+        .feature-card {
+            padding: 1rem;
+        }
+        
+        .metric-card {
+            padding: 1rem;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
         }
     }
 </style>
@@ -299,11 +402,7 @@ def render_professional_header(title: str, subtitle: str = "", icon: str = "🧠
     ''', unsafe_allow_html=True)
 
 def render_metric_cards(metrics: list):
-    """Render professional metric cards with safe delta handling
-    
-    Args:
-        metrics: List of dicts with keys: title, value, delta (optional)
-    """
+    """Render professional metric cards with safe delta handling"""
     if not metrics:
         return
         
@@ -384,6 +483,61 @@ def render_status_indicator(text: str, status: str = "success"):
     class_name = f"status-{status}"
     st.markdown(f'<span class="{class_name}">{text}</span>', unsafe_allow_html=True)
 
+def render_animated_loading(text="Đang xử lý..."):
+    """Render an animated loading indicator"""
+    
+    st.markdown(f'''
+    <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <span style="color: #667eea; font-weight: 500;">{text}</span>
+    </div>
+    ''', unsafe_allow_html=True)
+
+def render_chart_container(chart_content, title=""):
+    """Render a professional chart container"""
+    
+    st.markdown(f'''
+    <div class="chart-container">
+        {f"<h4 style='margin-bottom: 1rem; color: #2c3e50;'>{title}</h4>" if title else ""}
+        <div>{chart_content}</div>
+    </div>
+    ''', unsafe_allow_html=True)
+
+def render_recommendation_card(title: str, description: str, action: str, icon: str = "💡", priority: str = "medium"):
+    """Render an enhanced recommendation card"""
+    
+    priority_class = f"{priority}-priority"
+    
+    st.markdown(f'''
+    <div class="recommendation-card {priority_class}">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="flex: 1;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2c3e50;">
+                    <span style="margin-right: 0.5rem;">{icon}</span>
+                    {title}
+                </h4>
+                <p style="margin: 0 0 1rem 0; color: #495057;">{description}</p>
+                <button class="recommendation-button" onclick="this.innerHTML='🔄 Processing...'; this.disabled=true;">
+                    {action}
+                </button>
+            </div>
+            <div style="margin-left: 1rem;">
+                <span style="
+                    background: {'#dc3545' if priority == 'high' else '#ffc107' if priority == 'medium' else '#28a745'};
+                    color: white;
+                    padding: 0.25rem 0.5rem;
+                    border-radius: 12px;
+                    font-size: 0.7rem;
+                    text-transform: uppercase;
+                    font-weight: bold;
+                ">
+                    {priority}
+                </span>
+            </div>
+        </div>
+    </div>
+    ''', unsafe_allow_html=True)
+
 def create_professional_chart_layout():
     """Create a professional chart layout with modern styling"""
     
@@ -423,94 +577,6 @@ def render_progress_bar(progress: float, text: str = ""):
     </div>
     <small>{text} ({progress_percent:.1f}%)</small>
     ''', unsafe_allow_html=True)
-
-def create_enhanced_dashboard_chart(data, chart_type="overview"):
-    """Create enhanced dashboard charts with professional styling"""
-    
-    if chart_type == "overview":
-        # Create a comprehensive overview chart
-        fig = make_subplots(
-            rows=2, cols=2,
-            subplot_titles=('Dataset Distribution', 'Upload Timeline', 'Data Quality', 'Usage Analytics'),
-            specs=[[{"secondary_y": False}, {"secondary_y": False}],
-                   [{"secondary_y": False}, {"secondary_y": False}]]
-        )
-        
-        # Apply professional layout
-        fig.update_layout(create_professional_chart_layout())
-        fig.update_layout(height=600, showlegend=False)
-        
-        return fig
-    
-    elif chart_type == "correlation":
-        # Enhanced correlation heatmap
-        fig = px.imshow(
-            data,
-            color_continuous_scale='RdBu_r',
-            aspect='auto'
-        )
-        
-        fig.update_layout(create_professional_chart_layout())
-        fig.update_layout(title="Correlation Analysis Heatmap")
-        
-        return fig
-    
-    elif chart_type == "distribution":
-        # Enhanced distribution chart
-        fig = px.histogram(
-            data,
-            marginal="box",
-            hover_data=data.columns
-        )
-        
-        fig.update_layout(create_professional_chart_layout())
-        fig.update_layout(title="Data Distribution Analysis")
-        
-        return fig
-
-def render_navigation_sidebar():
-    """Render professional navigation sidebar"""
-    
-    with st.sidebar:
-        st.markdown('''
-        <div style="text-align: center; padding: 1rem 0; border-bottom: 1px solid #e1e5e9; margin-bottom: 1rem;">
-            <h3 style="color: #667eea; margin: 0;">🧠 VizGenie-GPT</h3>
-            <small style="color: #666;">Professional Analytics</small>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        # Navigation menu
-        nav_items = [
-            {"icon": "📂", "label": "Bảng Điều Khiển", "page": "pages/1_🧮_Bang_Dieu_Khien.py"},
-            {"icon": "💬", "label": "Chat AI", "page": "main.py"},
-            {"icon": "📊", "label": "Chi Tiết Bộ Dữ Liệu", "page": "pages/3_📂_Chi_Tiet_Bo_Du_Lieu.py"},
-            {"icon": "📈", "label": "Biểu Đồ Thông Minh", "page": "pages/6_📈_Bieu_Do_Thong_Minh.py"},
-            {"icon": "📋", "label": "Lịch Sử Biểu Đồ", "page": "pages/4_📊_Lich_Su_Bieu_Do.py"},
-            {"icon": "🔗", "label": "Phân Tích Chéo", "page": "pages/7_🔗_Phan_Tich_Cheo_Du_Lieu.py"},
-            {"icon": "📄", "label": "Báo Cáo EDA", "page": "pages/5_📋_Bao_Cao_EDA.py"},
-            {"icon": "📖", "label": "Về Dự Án", "page": "pages/📖_Ve_Du_An.py"}
-        ]
-        
-        for item in nav_items:
-            st.markdown(f'''
-            <div class="nav-item">
-                {item["icon"]} {item["label"]}
-            </div>
-            ''', unsafe_allow_html=True)
-            
-            if st.button(f"{item['icon']} {item['label']}", key=f"nav_{item['label']}", use_container_width=True):
-                st.switch_page(item["page"])
-        
-        # Quick stats section
-        st.markdown("---")
-        st.markdown("### 📊 Quick Stats")
-        
-        # This would be populated with actual data
-        render_metric_cards([
-            {"title": "Datasets", "value": "12", "delta": "+3"},
-            {"title": "Charts", "value": "45", "delta": "+8"},
-            {"title": "Insights", "value": "128", "delta": "+15"}
-        ])
 
 def create_data_quality_indicator(df):
     """Create a comprehensive data quality indicator"""
@@ -633,183 +699,6 @@ def render_interactive_data_explorer(df):
                 if len(numeric_cols) > 0:
                     st.dataframe(filtered_df[numeric_cols].describe(), use_container_width=True)
 
-def create_ai_recommendation_panel(df, analysis_history=None):
-    """Create an AI-powered recommendation panel"""
-    
-    st.markdown("### 🤖 AI Recommendations")
-    
-    # Analyze data characteristics
-    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
-    categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
-    datetime_cols = [col for col in df.columns if 'date' in col.lower() or 'time' in col.lower()]
-    
-    recommendations = []
-    
-    # Data structure recommendations
-    if len(numeric_cols) >= 2:
-        recommendations.append({
-            "type": "analysis",
-            "priority": "high",
-            "title": "Correlation Analysis",
-            "description": f"You have {len(numeric_cols)} numeric columns. Consider analyzing correlations between variables.",
-            "action": "Create correlation heatmap",
-            "icon": "🔥"
-        })
-    
-    if categorical_cols and numeric_cols:
-        recommendations.append({
-            "type": "visualization",
-            "priority": "medium",
-            "title": "Group Comparisons",
-            "description": f"Compare {numeric_cols[0]} across different {categorical_cols[0]} categories.",
-            "action": "Create box plot analysis",
-            "icon": "📊"
-        })
-    
-    if datetime_cols:
-        recommendations.append({
-            "type": "trend",
-            "priority": "high",
-            "title": "Time Series Analysis",
-            "description": f"Detected time-based data in {datetime_cols[0]}. Analyze trends over time.",
-            "action": "Create time series chart",
-            "icon": "📈"
-        })
-    
-    # Data quality recommendations
-    missing_pct = (df.isnull().sum().sum() / (df.shape[0] * df.shape[1])) * 100
-    if missing_pct > 5:
-        recommendations.append({
-            "type": "quality",
-            "priority": "high",
-            "title": "Data Cleaning Needed",
-            "description": f"Dataset has {missing_pct:.1f}% missing values. Consider data cleaning.",
-            "action": "Go to Dataset Details",
-            "icon": "🧹"
-        })
-    
-    # Display recommendations
-    for rec in recommendations:
-        priority_color = "#dc3545" if rec['priority'] == 'high' else "#ffc107" if rec['priority'] == 'medium' else "#28a745"
-        
-        st.markdown(f'''
-        <div class="feature-card" style="border-left-color: {priority_color};">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h4>{rec['icon']} {rec['title']}</h4>
-                    <p>{rec['description']}</p>
-                </div>
-                <span style="background: {priority_color}; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem; text-transform: uppercase;">
-                    {rec['priority']}
-                </span>
-            </div>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        if st.button(rec['action'], key=f"rec_{rec['title']}"):
-            st.info(f"Recommendation: {rec['action']} - This would trigger the appropriate action!")
-
-def render_animated_loading(text="Processing..."):
-    """Render an animated loading indicator"""
-    
-    st.markdown(f'''
-    <div style="text-align: center; padding: 2rem;">
-        <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        <p style="margin-top: 1rem; color: #667eea; font-weight: 500;">{text}</p>
-    </div>
-    
-    <style>
-        @keyframes spin {{
-            0% {{ transform: rotate(0deg); }}
-            100% {{ transform: rotate(360deg); }}
-        }}
-    </style>
-    ''', unsafe_allow_html=True)
-
-def create_export_options_panel():
-    """Create a professional export options panel"""
-    
-    st.markdown("### 📤 Export Options")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.markdown('''
-        <div class="feature-card" style="text-align: center;">
-            <h4>📊 Charts</h4>
-            <p>Export as PNG, SVG, or PDF</p>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        if st.button("Export Charts", key="export_charts", use_container_width=True):
-            st.success("Chart export functionality would be implemented here")
-    
-    with col2:
-        st.markdown('''
-        <div class="feature-card" style="text-align: center;">
-            <h4>📋 Reports</h4>
-            <p>Generate comprehensive PDF reports</p>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        if st.button("Generate Report", key="export_report", use_container_width=True):
-            st.success("Report generation would be implemented here")
-    
-    with col3:
-        st.markdown('''
-        <div class="feature-card" style="text-align: center;">
-            <h4>💾 Data</h4>
-            <p>Export processed data as CSV/Excel</p>
-        </div>
-        ''', unsafe_allow_html=True)
-        
-        if st.button("Export Data", key="export_data", use_container_width=True):
-            st.success("Data export functionality would be implemented here")
-
-# Usage example function
-def example_usage():
-    """Example of how to use the professional UI components"""
-    
-    # Initialize professional styling
-    render_professional_header(
-        "VizGenie-GPT Professional Analytics", 
-        "Advanced AI-powered data analysis with beautiful visualizations",
-        "🧠"
-    )
-    
-    # Sample data for demonstration
-    import pandas as pd
-    import numpy as np
-    
-    # Create sample dataframe
-    np.random.seed(42)
-    sample_df = pd.DataFrame({
-        'revenue': np.random.normal(100000, 20000, 1000),
-        'customers': np.random.poisson(50, 1000),
-        'region': np.random.choice(['North', 'South', 'East', 'West'], 1000),
-        'date': pd.date_range('2023-01-01', periods=1000, freq='D')
-    })
-    
-    # Render metric cards
-    render_metric_cards([
-        {"title": "Total Revenue", "value": "$2.4M", "delta": "+12%"},
-        {"title": "Active Users", "value": "45K", "delta": "+8%"},
-        {"title": "Conversion Rate", "value": "3.2%", "delta": "-0.5%"},
-        {"title": "Avg Order Value", "value": "$67", "delta": "+15%"}
-    ])
-    
-    # Data quality indicator
-    quality_score = create_data_quality_indicator(sample_df)
-    
-    # AI recommendations
-    create_ai_recommendation_panel(sample_df)
-    
-    # Interactive explorer
-    render_interactive_data_explorer(sample_df)
-    
-    # Export options
-    create_export_options_panel()
-
 # Export the styling for use in other modules
 __all__ = [
     'PROFESSIONAL_CSS',
@@ -820,11 +709,9 @@ __all__ = [
     'render_status_indicator',
     'create_professional_chart_layout',
     'render_progress_bar',
-    'create_enhanced_dashboard_chart',
-    'render_navigation_sidebar',
-    'create_data_quality_indicator',
-    'render_interactive_data_explorer',
-    'create_ai_recommendation_panel',
     'render_animated_loading',
-    'create_export_options_panel'
+    'render_chart_container',
+    'render_recommendation_card',
+    'create_data_quality_indicator',
+    'render_interactive_data_explorer'
 ]

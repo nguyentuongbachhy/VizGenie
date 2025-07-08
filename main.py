@@ -1,4 +1,5 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 import pandas as pd
 from dotenv import load_dotenv
 from src.models.llms import create_agent_from_csv, load_llm
@@ -12,13 +13,12 @@ from src.utils import (
 from src.components.ui_components import (
     render_professional_header, render_metric_cards, render_feature_card,
     render_insight_card, render_status_indicator, create_data_quality_indicator,
-    render_interactive_data_explorer, create_ai_recommendation_panel,
-    render_animated_loading, PROFESSIONAL_CSS
+    render_interactive_data_explorer, render_animated_loading, PROFESSIONAL_CSS
 )
 
 # Import chart enhancement functions
 from src.chart_enhancements import (
-    smart_patch_chart_code, apply_chart_enhancements, 
+    smart_patch_chart_code, apply_chart_enhancements,
     enhance_prompt_with_chart_suggestions, ENHANCED_COLOR_SCHEMES
 )
 
@@ -49,6 +49,440 @@ render_professional_header(
 # Load environment and initialize database FIRST
 load_dotenv()
 init_db()
+
+def generate_chart_code(rec, df):
+    """Generate Python visualization code based on recommendation"""
+    try:
+        chart_type = rec.get('chart_type', 'scatter')
+        
+        if chart_type == 'heatmap':
+            # Correlation heatmap
+            numeric_cols = rec.get('columns', df.select_dtypes(include=['number']).columns.tolist())
+            code = f"""
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
+# Select numeric columns and calculate correlation
+numeric_cols = {numeric_cols}
+correlation_data = df[numeric_cols].corr()
+
+# Create heatmap
+plt.figure(figsize=(12, 8))
+mask = np.triu(np.ones_like(correlation_data, dtype=bool))
+sns.heatmap(correlation_data, 
+           annot=True, 
+           cmap='RdBu_r', 
+           center=0,
+           square=True,
+           mask=mask,
+           cbar_kws={{'shrink': 0.8}})
+plt.title('Correlation Heatmap - Discover Data Relationships', fontsize=16, fontweight='bold')
+plt.tight_layout()
+"""
+        
+        elif chart_type == 'scatter':
+            x_col = rec.get('x_col')
+            y_col = rec.get('y_col')
+            code = f"""
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=df, x='{x_col}', y='{y_col}', alpha=0.7, s=60)
+plt.title(f'Relationship: {x_col} vs {y_col}', fontsize=14, fontweight='bold')
+plt.xlabel('{x_col}', fontsize=12)
+plt.ylabel('{y_col}', fontsize=12)
+plt.grid(True, alpha=0.3)
+
+# Add trend line
+valid_data = df[['{x_col}', '{y_col}']].dropna()
+if len(valid_data) > 1:
+    z = np.polyfit(valid_data['{x_col}'], valid_data['{y_col}'], 1)
+    p = np.poly1d(z)
+    plt.plot(valid_data['{x_col}'], p(valid_data['{x_col}']), "r--", alpha=0.8, linewidth=2, label='Trend')
+    plt.legend()
+plt.tight_layout()
+"""
+        
+        elif chart_type == 'boxplot':
+            x_col = rec.get('x_col')
+            y_col = rec.get('y_col')
+            code = f"""
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+plt.figure(figsize=(12, 6))
+sns.boxplot(data=df, x='{x_col}', y='{y_col}', palette='Set2')
+plt.title(f'Distribution of {y_col} by {x_col}', fontsize=14, fontweight='bold')
+plt.xticks(rotation=45)
+plt.ylabel('{y_col}', fontsize=12)
+plt.xlabel('{x_col}', fontsize=12)
+plt.grid(True, alpha=0.3, axis='y')
+plt.tight_layout()
+"""
+        
+        elif chart_type == 'barplot':
+            column = rec.get('column')
+            code = f"""
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+plt.figure(figsize=(10, 6))
+value_counts = df['{column}'].value_counts().head(15)
+sns.barplot(x=value_counts.index, y=value_counts.values, palette='viridis')
+plt.title(f'Distribution of {column}', fontsize=14, fontweight='bold')
+plt.xlabel('{column}', fontsize=12)
+plt.ylabel('Count', fontsize=12)
+plt.xticks(rotation=45)
+plt.grid(True, alpha=0.3, axis='y')
+
+# Add value labels on bars
+for i, v in enumerate(value_counts.values):
+    plt.text(i, v + max(value_counts.values)*0.01, str(v), ha='center', va='bottom')
+plt.tight_layout()
+"""
+        
+        elif chart_type == 'timeseries':
+            x_col = rec.get('x_col')
+            y_col = rec.get('y_col')
+            code = f"""
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+# Convert to datetime if not already
+df['{x_col}'] = pd.to_datetime(df['{x_col}'], errors='coerce')
+
+plt.figure(figsize=(14, 6))
+plt.plot(df['{x_col}'], df['{y_col}'], linewidth=2, marker='o', markersize=4, alpha=0.8)
+plt.title(f'Time Series: {y_col} over {x_col}', fontsize=14, fontweight='bold')
+plt.xlabel('{x_col}', fontsize=12)
+plt.ylabel('{y_col}', fontsize=12)
+plt.grid(True, alpha=0.3)
+plt.xticks(rotation=45)
+plt.tight_layout()
+"""
+        
+        elif chart_type == 'missing_data':
+            code = f"""
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Calculate missing data
+missing_data = df.isnull().sum().sort_values(ascending=False)
+missing_data = missing_data[missing_data > 0]
+
+if len(missing_data) > 0:
+    plt.figure(figsize=(12, 6))
+    
+    # Missing data bar chart
+    plt.subplot(1, 2, 1)
+    sns.barplot(x=missing_data.values, y=missing_data.index, palette='Reds_r')
+    plt.title('Missing Data Count by Column', fontsize=12, fontweight='bold')
+    plt.xlabel('Number of Missing Values')
+    
+    # Missing data heatmap
+    plt.subplot(1, 2, 2)
+    sns.heatmap(df.isnull(), yticklabels=False, cbar=True, cmap='viridis')
+    plt.title('Missing Data Pattern', fontsize=12, fontweight='bold')
+    
+    plt.tight_layout()
+else:
+    plt.figure(figsize=(8, 4))
+    plt.text(0.5, 0.5, 'No Missing Data Found!\\nYour dataset is complete.', 
+             ha='center', va='center', fontsize=16, fontweight='bold', 
+             bbox=dict(boxstyle="round,pad=0.3", facecolor="lightgreen", alpha=0.7))
+    plt.axis('off')
+"""
+        
+        else:
+            # Default scatter plot
+            numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+            if len(numeric_cols) >= 2:
+                code = f"""
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=df, x='{numeric_cols[0]}', y='{numeric_cols[1]}', alpha=0.7, s=60)
+plt.title(f'Scatter Plot: {numeric_cols[0]} vs {numeric_cols[1]}', fontsize=14, fontweight='bold')
+plt.grid(True, alpha=0.3)
+plt.tight_layout()
+"""
+            else:
+                code = "print('Insufficient numeric columns for visualization')"
+        
+        return code
+        
+    except Exception as e:
+        return f"print('Error generating chart code: {str(e)}')"
+
+def execute_chart_code_safely(code, df):
+    """Safely execute chart code and return figure"""
+    try:
+        # Create safe execution environment
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        import numpy as np
+        import pandas as pd
+        
+        safe_globals = {
+            'df': df,
+            'plt': plt,
+            'sns': sns,
+            'np': np,
+            'pd': pd
+        }
+        
+        # Clear any existing plots
+        plt.clf()
+        
+        # Execute the code
+        exec(code, safe_globals)
+        
+        # Return the current figure
+        return plt.gcf()
+        
+    except Exception as e:
+        # Create error figure
+        fig, ax = plt.subplots(figsize=(8, 4))
+        ax.text(0.5, 0.5, f'Error creating chart:\n{str(e)}', 
+                ha='center', va='center', fontsize=12, 
+                bbox=dict(boxstyle="round,pad=0.3", facecolor="lightcoral", alpha=0.7))
+        ax.axis('off')
+        return fig
+
+def generate_chart_insights(rec, df):
+    """Generate AI insights about the created chart"""
+    try:
+        llm = load_llm("gpt-3.5-turbo")
+        
+        chart_type = rec.get('chart_type', 'unknown')
+        title = rec.get('title', 'Chart Analysis')
+        
+        # Prepare data summary for AI
+        data_summary = f"""
+Dataset shape: {df.shape}
+Chart type: {chart_type}
+Recommendation: {rec.get('description', '')}
+"""
+        
+        if chart_type == 'heatmap':
+            numeric_cols = df.select_dtypes(include=['number']).columns.tolist()[:10]
+            if len(numeric_cols) > 1:
+                corr_data = df[numeric_cols].corr()
+                strongest_corr = corr_data.abs().unstack().sort_values(ascending=False)
+                strongest_corr = strongest_corr[strongest_corr < 1.0].head(3)
+                data_summary += f"\nStrongest correlations: {strongest_corr.to_dict()}"
+        
+        elif chart_type == 'scatter':
+            x_col = rec.get('x_col')
+            y_col = rec.get('y_col')
+            if x_col and y_col and x_col in df.columns and y_col in df.columns:
+                correlation = df[x_col].corr(df[y_col])
+                data_summary += f"\nCorrelation between {x_col} and {y_col}: {correlation:.3f}"
+        
+        prompt = f"""
+Phân tích visualization này và đưa ra 3-4 insights quan trọng:
+
+{data_summary}
+
+Vui lòng đưa ra insights bằng tiếng Việt với format:
+
+## 🔍 Insights Chính
+
+1. **Khám phá Mô hình**: [Những mô hình nào bạn thấy?]
+2. **Phát hiện Thống kê**: [Các con số cho chúng ta biết gì?] 
+3. **Ý nghĩa Kinh doanh**: [Điều này có nghĩa gì cho việc ra quyết định?]
+4. **Khuyến nghị**: [Nên làm gì tiếp theo?]
+
+Giữ nó ngắn gọn nhưng có thể hành động.
+"""
+        
+        response = llm.invoke(prompt)
+        
+        # Extract content from response
+        if hasattr(response, 'content'):
+            return response.content
+        elif isinstance(response, str):
+            return response
+        else:
+            return str(response)
+            
+    except Exception as e:
+        return f"""
+## 🔍 Insights Chính
+
+1. **Biểu đồ Được tạo**: Đã tạo thành công {rec.get('title', 'visualization')}
+2. **Tổng quan Dữ liệu**: Dataset chứa {df.shape[0]:,} hàng và {df.shape[1]} cột
+3. **Các bước Tiếp theo**: Khám phá các đề xuất khác hoặc đi sâu vào các mô hình cụ thể
+4. **Ghi chú**: Việc tạo insight AI gặp vấn đề: {str(e)}
+"""
+
+def generate_and_display_chart(rec, df):
+    """Generate, execute and display chart with insights"""
+    
+    # Create columns for layout
+    chart_col, insight_col = st.columns([2, 1])
+    
+    with chart_col:
+        st.markdown(f"#### 📊 {rec['title']}")
+        
+        # Show loading spinner
+        with st.spinner(f"🎨 Đang tạo {rec['action'].lower()}..."):
+            # Generate code
+            code = generate_chart_code(rec, df)
+            
+            # Execute code and get figure
+            fig = execute_chart_code_safely(code, df)
+            
+            # Display chart
+            if fig:
+                st.pyplot(fig)
+                plt.close(fig)  # Clean up
+            
+        # Show code in expander
+        with st.expander("📋 Xem Code Đã tạo", expanded=False):
+            st.code(code, language='python')
+    
+    with insight_col:
+        st.markdown("#### 🧠 AI Insights")
+        
+        with st.spinner("🤖 Đang tạo insights..."):
+            insights = generate_chart_insights(rec, df)
+            st.markdown(insights)
+        
+        # Action buttons
+        st.markdown("#### ⚡ Hành động")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("💾 Lưu Biểu đồ", key=f"save_{rec['title']}", use_container_width=True):
+                # Save to chart history
+                try:
+                    # Get dataset_id from session state
+                    dataset_id = st.session_state.get('current_dataset_id', 1)
+                    add_chart_card(dataset_id, rec['action'], insights, code)
+                    st.success("✅ Đã lưu biểu đồ vào lịch sử!")
+                except Exception as e:
+                    st.error(f"❌ Lỗi khi lưu: {str(e)}")
+        
+        with col2:
+            if st.button("🔄 Tạo lại", key=f"regen_{rec['title']}", use_container_width=True):
+                st.rerun()
+
+def create_ai_recommendation_panel(df, analysis_history=None):
+    """Create an AI-powered recommendation panel with auto-visualization"""
+    
+    st.markdown("### 🤖 AI Recommendations")
+    
+    # Analyze data characteristics
+    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()
+    categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+    datetime_cols = [col for col in df.columns if 'date' in col.lower() or 'time' in col.lower()]
+    
+    recommendations = []
+    
+    # Data structure recommendations with enhanced details
+    if len(numeric_cols) >= 2:
+        recommendations.append({
+            "type": "correlation",
+            "priority": "high",
+            "title": "Phân tích Tương quan",
+            "description": f"Bạn có {len(numeric_cols)} cột số. Phân tích tương quan giữa các biến để tìm ra những mô hình ẩn.",
+            "action": "Tạo correlation heatmap",
+            "icon": "🔥",
+            "chart_type": "heatmap",
+            "columns": numeric_cols[:10]  # Limit for performance
+        })
+        
+        # Add scatter plot recommendation for first two numeric columns
+        recommendations.append({
+            "type": "scatter",
+            "priority": "medium", 
+            "title": "Phân tích Mối quan hệ",
+            "description": f"Khám phá mối quan hệ giữa {numeric_cols[0]} và {numeric_cols[1]}.",
+            "action": "Tạo scatter plot",
+            "icon": "📊",
+            "chart_type": "scatter",
+            "x_col": numeric_cols[0],
+            "y_col": numeric_cols[1] if len(numeric_cols) > 1 else numeric_cols[0]
+        })
+    
+    if categorical_cols and numeric_cols:
+        recommendations.append({
+            "type": "comparison",
+            "priority": "medium",
+            "title": "So sánh Nhóm",
+            "description": f"So sánh {numeric_cols[0]} giữa các danh mục {categorical_cols[0]} khác nhau.",
+            "action": "Tạo box plot analysis",
+            "icon": "📦",
+            "chart_type": "boxplot",
+            "x_col": categorical_cols[0],
+            "y_col": numeric_cols[0]
+        })
+        
+        recommendations.append({
+            "type": "distribution",
+            "priority": "medium",
+            "title": "Phân phối Danh mục",
+            "description": f"Phân tích phân phối của các danh mục {categorical_cols[0]}.",
+            "action": "Tạo bar chart",
+            "icon": "📊",
+            "chart_type": "barplot",
+            "column": categorical_cols[0]
+        })
+    
+    if datetime_cols and numeric_cols:
+        recommendations.append({
+            "type": "trend",
+            "priority": "high",
+            "title": "Phân tích Chuỗi thời gian",
+            "description": f"Phân tích xu hướng theo thời gian cho {numeric_cols[0]}.",
+            "action": "Tạo time series chart",
+            "icon": "📈",
+            "chart_type": "timeseries",
+            "x_col": datetime_cols[0],
+            "y_col": numeric_cols[0]
+        })
+    
+    # Data quality recommendations
+    missing_pct = (df.isnull().sum().sum() / (df.shape[0] * df.shape[1])) * 100
+    if missing_pct > 5:
+        recommendations.append({
+            "type": "quality",
+            "priority": "high",
+            "title": "Phân tích Chất lượng Dữ liệu",
+            "description": f"Dataset có {missing_pct:.1f}% giá trị thiếu. Visualize mô hình dữ liệu thiếu.",
+            "action": "Tạo missing data chart",
+            "icon": "🧹",
+            "chart_type": "missing_data",
+            "missing_pct": missing_pct
+        })
+    
+    # Display recommendations with enhanced functionality
+    for i, rec in enumerate(recommendations):
+        priority_color = "#dc3545" if rec['priority'] == 'high' else "#ffc107" if rec['priority'] == 'medium' else "#28a745"
+        
+        st.markdown(f'''
+        <div class="feature-card" style="border-left-color: {priority_color};">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h4>{rec['icon']} {rec['title']}</h4>
+                    <p>{rec['description']}</p>
+                </div>
+                <span style="background: {priority_color}; color: white; padding: 0.25rem 0.5rem; border-radius: 12px; font-size: 0.7rem; text-transform: uppercase;">
+                    {rec['priority']}
+                </span>
+            </div>
+        </div>
+        ''', unsafe_allow_html=True)
+        
+        # Enhanced button with auto-visualization
+        if st.button(rec['action'], key=f"rec_{rec['title']}_{i}"):
+            generate_and_display_chart(rec, df)
 
 def generate_comprehensive_data_story(df: pd.DataFrame, chat_history: list, dataset_name: str) -> str:
     """Tạo một câu chuyện dữ liệu toàn diện với thông tin kinh doanh"""
@@ -173,7 +607,6 @@ def extract_enhanced_chart_insights(code: str, df: pd.DataFrame) -> str:
     except Exception as e:
         return f"❌ Lỗi tạo insights biểu đồ: {str(e)}"
 
-# NOW load datasets after database is initialized
 datasets = get_all_datasets()
 if not datasets:
     render_feature_card(
@@ -198,6 +631,9 @@ with col1:
     )
     dataset_id = dataset_options[selected]
     dataset = get_dataset(dataset_id)
+    
+    # Store dataset_id in session state for saving charts
+    st.session_state.current_dataset_id = dataset_id
 
 with col2:
     if st.button("📊 Tạo Câu chuyện Dữ liệu", type="primary", use_container_width=True):
@@ -240,7 +676,7 @@ elif quality_score < 0.9:
 else:
     render_status_indicator("Chất lượng Dữ liệu Tuyệt vời", "success")
 
-# AI Recommendations Panel
+# Enhanced AI Recommendations Panel
 create_ai_recommendation_panel(df)
 
 # Interactive Data Explorer (if requested)
