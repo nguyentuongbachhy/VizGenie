@@ -16,6 +16,7 @@ from src.components.ui_components import (
     render_animated_loading, PROFESSIONAL_CSS
 )
 
+# Import chart enhancement functions
 from src.chart_enhancements import (
     smart_patch_chart_code, apply_chart_enhancements, 
     enhance_prompt_with_chart_suggestions, ENHANCED_COLOR_SCHEMES
@@ -45,7 +46,7 @@ render_professional_header(
     "🧠"
 )
 
-# Load environment and initialize
+# Load environment and initialize database FIRST
 load_dotenv()
 init_db()
 
@@ -96,7 +97,17 @@ def generate_comprehensive_data_story(df: pd.DataFrame, chat_history: list, data
     Sử dụng số cụ thể và tỷ lệ phần trăm khi có thể.
     """
     
-    return llm.invoke(prompt)
+    try:
+        response = llm.invoke(prompt)
+        # Handle different response types
+        if hasattr(response, 'content'):
+            return response.content
+        elif isinstance(response, str):
+            return response
+        else:
+            return str(response)
+    except Exception as e:
+        return f"❌ Lỗi tạo câu chuyện dữ liệu: {str(e)}"
 
 def extract_enhanced_chart_insights(code: str, df: pd.DataFrame) -> str:
     """Trích xuất thông tin chi tiết về biểu đồ được tạo"""
@@ -150,9 +161,19 @@ def extract_enhanced_chart_insights(code: str, df: pd.DataFrame) -> str:
     Tập trung vào những thông tin có thể hành động mà các bên liên quan có thể sử dụng.
     """
     
-    return llm.invoke(prompt)
+    try:
+        response = llm.invoke(prompt)
+        # Handle different response types
+        if hasattr(response, 'content'):
+            return response.content
+        elif isinstance(response, str):
+            return response
+        else:
+            return str(response)
+    except Exception as e:
+        return f"❌ Lỗi tạo insights biểu đồ: {str(e)}"
 
-# Load datasets with error handling
+# NOW load datasets after database is initialized
 datasets = get_all_datasets()
 if not datasets:
     render_feature_card(

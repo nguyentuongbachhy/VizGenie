@@ -10,7 +10,7 @@ from src.models.llms import load_llm
 import json
 import time
 
-st.set_page_config(page_title="📂 Chi Tiết Bộ Dữ Liệu", layout="wide")
+st.set_page_config(page_title="Chi Tiết Bộ Dữ Liệu", layout="wide")
 st.title("📂 Chi Tiết Bộ Dữ Liệu")
 
 # Add custom CSS for better styling
@@ -59,6 +59,7 @@ st.markdown("""
         margin: 0.25rem 0;
     }
     .cache-info {
+        color: black;
         background: #e3f2fd;
         border: 1px solid #2196f3;
         padding: 0.75rem;
@@ -239,25 +240,69 @@ def generate_cleaning_code_from_plan(_plan):
         plan_text = extract_llm_content(_plan)
         
         prompt = f"""
-Chuyển đổi kế hoạch làm sạch sau thành mã Python hợp lệ sử dụng pandas.
-Chỉ trả về mã Python có thể thực thi trực tiếp.
-Giả định dataframe được đặt tên là `df`.
+            Tạo mã Python an toàn để làm sạch dữ liệu:
+            
+            ```python
+            import pandas as pd
+            import numpy as np
+            
+            print("🔧 Bắt đầu làm sạch dữ liệu...")
+            
+            # Xử lý missing values an toàn
+            for col in df.columns:
+                missing_count = df[col].isnull().sum()
+                if missing_count > 0:
+                    try:
+                        if pd.api.types.is_numeric_dtype(df[col]):
+                            df[col] = df[col].fillna(df[col].median())
+                            print(f"Điền missing cho cột số: {{col}}")
+                        else:
+                            mode_val = df[col].mode()
+                            if len(mode_val) > 0:
+                                df[col] = df[col].fillna(mode_val[0])
+                            else:
+                                df[col] = df[col].fillna('Unknown')
+                            print(f"Điền missing cho cột text: {{col}}")
+                    except Exception as e:
+                        print(f"Bỏ qua cột {{col}}: {{e}}")
+            
+            print("✅ Làm sạch hoàn thành!")
 
-Quan trọng:
-- Luôn kiểm tra dtype trước khi áp dụng .str methods
-- Xử lý lỗi với try-except cho từng bước
-- Thêm print statements để theo dõi quá trình
-- Đảm bảo mã hoạt động với dữ liệu thực
-
-Kế hoạch Làm sạch:
-{plan_text}
-
-Trả về mã Python đầy đủ:
-"""
+            Kế hoạch làm sạch gốc:
+            {plan_text}
+            
+            CHỈ trả về Python code.
+        """
+        
         response = llm.invoke(prompt)
         return extract_llm_content(response)
     except Exception as e:
         return f"# Lỗi tạo mã: {str(e)}\nprint('Không thể tạo mã làm sạch')"
+
+def safe_execute_cleaning_code(code: str, df: pd.DataFrame):
+    """Safely execute cleaning code with better error handling"""
+    try:
+        # Create safe execution environment
+        safe_globals = {
+            'df': df.copy(),  # Work on copy to avoid modifying original
+            'pd': pd, 
+            'np': np,
+            'print': st.write  # Redirect print to streamlit
+        }
+        
+        # Add safety functions
+        safe_globals['fix_numeric_strings'] = fix_numeric_strings
+        
+        # Execute the code
+        exec(code, safe_globals)
+        
+        cleaned_df = safe_globals['df']
+        
+        return cleaned_df, True
+        
+    except Exception as e:
+        # Return original dataframe if cleaning fails
+        return df, False
 
 def generate_insight(info):
     """Generate insights for column analysis"""
@@ -333,40 +378,109 @@ def plot_distribution(col_name, series):
     except Exception as e:
         st.error(f"Lỗi vẽ biểu đồ cho {col_name}: {str(e)}")
 
-def perform_column_analysis(df, dataset_id):
-    """Thực hiện phân tích cột với progress bar"""
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    
+def perform_column_analysis(df, dataset_id, progress_container):
+    """Thực hiện phân tích cột với progress bar chuyên nghiệp"""
     col_analyses = []
+    total_cols = len(df.columns)
     
-    for i, col in enumerate(df.columns):
-        status_text.text(f"Đang phân tích cột: {col}")
-        progress_bar.progress((i + 1) / len(df.columns))
+    try:
+        # Create progress elements within the container
+        with progress_container:
+            progress_header = st.empty()
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+            detail_text = st.empty()
         
-        # Column analysis
-        stats = analyze_column(col, df[col])
+        # Header with animation
+        progress_header.markdown("""
+        <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white; margin-bottom: 1rem;">
+            <h4 style="margin: 0;">🔬 Đang Phân Tích Dữ Liệu</h4>
+            <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">Sử dụng AI để phân tích từng cột...</p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Get sample values for semantic analysis
-        sample_vals = df[col].dropna().head(5).tolist()
-        semantic = guess_column_semantic_llm(col, sample_vals)
-        stats['semantic'] = semantic
+        for i, col in enumerate(df.columns):
+            # Update progress
+            progress_percent = (i + 1) / total_cols
+            progress_bar.progress(progress_percent)
+            
+            # Update status with professional styling
+            status_text.markdown(f"""
+            <div style="background: #f8f9fa; padding: 0.8rem; border-radius: 8px; border-left: 4px solid #667eea;">
+                <strong>🔍 Đang phân tích:</strong> <code>{col}</code><br>
+                <small>Bước {i + 1}/{total_cols} - {progress_percent:.1%} hoàn thành</small>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Show current analysis details
+            detail_text.info(f"🧠 AI đang phân tích ngữ nghĩa và thống kê cho cột '{col}'...")
+            
+            # Column analysis
+            stats = analyze_column(col, df[col])
+            # Get sample values for semantic analysis
+            sample_vals = df[col].dropna().head(5).tolist()
+            try:
+                semantic = guess_column_semantic_llm(col, sample_vals)
+            except Exception as semantic_error:
+                semantic = "Không xác định được"
+            
+            stats['semantic'] = semantic
+            col_analyses.append(stats)
+            
+            # Brief pause for smooth animation
+            time.sleep(0.1)  # Reduced from 0.2 for faster testing
         
-        col_analyses.append(stats)
         
-        time.sleep(0.1)  # Brief pause to show progress
-    
-    status_text.text("✅ Hoàn thành phân tích!")
-    progress_bar.progress(1.0)
-    
-    # Lưu kết quả phân tích vào database
-    save_dataset_analysis(dataset_id, col_analyses)
-    
-    time.sleep(0.5)
-    status_text.empty()
-    progress_bar.empty()
-    
-    return col_analyses
+        # Complete progress
+        progress_bar.progress(1.0)
+        status_text.success("✅ Phân tích hoàn thành thành công!")
+        detail_text.info("💾 Đang lưu kết quả vào cơ sở dữ liệu...")
+        
+        # Save results to database với debug
+        save_success = save_dataset_analysis(dataset_id, col_analyses)
+        
+        if save_success:
+            detail_text.success("🎉 Đã lưu kết quả phân tích!")
+        else:
+            detail_text.error("❌ Lỗi khi lưu vào database!")
+        
+        # Show completion with animation
+        time.sleep(0.8)
+        time.sleep(0.5)
+        
+        # Clear all progress elements completely
+        progress_header.empty()
+        progress_bar.empty() 
+        status_text.empty()
+        detail_text.empty()
+        
+        # Show final success message briefly then clear it
+        success_msg = st.empty()
+        with progress_container:
+            if save_success:
+                success_msg.success("✅ Phân tích dữ liệu hoàn tất! Kết quả hiển thị bên dưới.")
+            else:
+                success_msg.warning("⚠️ Phân tích hoàn tất nhưng có lỗi khi lưu cache!")
+            time.sleep(1.2)
+            success_msg.empty()
+        
+        return col_analyses
+        
+    except Exception as e:
+        # Clear progress on error
+        try:
+            progress_header.empty()
+            progress_bar.empty()
+            status_text.empty() 
+            detail_text.empty()
+        except:
+            pass
+        
+        # Show error in container
+        with progress_container:
+            st.error(f"❌ Lỗi trong quá trình phân tích: {str(e)}")
+        
+        return []
 
 def extract_valid_code(llm_response):
     """Extract valid Python code from LLM response"""
@@ -563,11 +677,42 @@ def main():
         # Kiểm tra xem đã có phân tích cached không
         cached_analysis = get_dataset_analysis(dataset_id)
         
+        # AUTO-RESTORE with force option
+        auto_loaded = False
+        force_load_cache = st.checkbox("🔧 Force Load Cache (ignore outdated)", value=False, help="Load cache even if considered outdated")
+        
+        if cached_analysis and not hasattr(st.session_state, 'col_analyses'):
+            is_outdated = is_analysis_outdated(cached_analysis, dataset[4])
+            
+            # Load cache if not outdated OR if force load is enabled
+            if not is_outdated or force_load_cache:
+                try:
+                    # Tự động restore cache vào session state
+                    st.session_state.col_analyses = cached_analysis['analysis']
+                    st.session_state.analysis_auto_loaded = True
+                    auto_loaded = True
+                    
+                    if force_load_cache:
+                        st.success("🔧 Force-loaded cache into session state (ignoring outdated status)!")
+                    else:
+                        st.success("🔄 Auto-loaded cache into session state!")
+                        
+                except Exception as e:
+                    st.error(f"Failed to auto-load cache: {e}")
+        
+        # Check session state
+        st.write("**📊 Session State Check:**")
+        if hasattr(st.session_state, 'col_analyses'):
+            st.success(f"✅ Session state has col_analyses with {len(st.session_state.col_analyses)} items")
+            st.write(f"Auto-loaded flag: {st.session_state.get('analysis_auto_loaded', False)}")
+        else:
+            st.warning("❌ No col_analyses in session state")
+        
         # Hiển thị thông tin cache
         if cached_analysis:
-            is_outdated = is_analysis_outdated(cached_analysis, dataset[4])  # dataset[4] là upload_time
+            is_outdated = is_analysis_outdated(cached_analysis, dataset[4])
             
-            if is_outdated:
+            if is_outdated and not force_load_cache:
                 st.markdown("""
                 <div class="cache-info">
                     ⚠️ <strong>Phân tích cũ được tìm thấy</strong> - Dataset đã được cập nhật sau lần phân tích cuối. 
@@ -575,100 +720,241 @@ def main():
                 </div>
                 """, unsafe_allow_html=True)
             else:
+                # Hiển thị thông tin cache với status
+                cache_status = "đã được tự động tải" if auto_loaded or st.session_state.get('analysis_auto_loaded', False) else "có sẵn"
+                if force_load_cache:
+                    cache_status += " (force loaded)"
+                    
                 st.markdown(f"""
                 <div class="cache-info">
-                    ✅ <strong>Phân tích có sẵn</strong> - Đã phân tích lúc {cached_analysis['updated_at']}. 
-                    Bạn có thể sử dụng kết quả này hoặc chạy phân tích lại.
+                    ✅ <strong>Phân tích có sẵn</strong> - Đã phân tích lúc {cached_analysis['updated_at']} và {cache_status}. 
+                    Bạn có thể chạy phân tích lại nếu cần.
                 </div>
                 """, unsafe_allow_html=True)
+        else:
+            st.info("ℹ️ Chưa có phân tích nào được lưu cho dataset này.")
         
-        # Buttons cho việc phân tích
+        # Create buttons with better layout
+        st.markdown("#### ⚡ Tùy chọn Phân tích")
         col_btn1, col_btn2, col_btn3 = st.columns(3)
         
         with col_btn1:
-            if cached_analysis and not is_analysis_outdated(cached_analysis, dataset[4]):
-                if st.button("📋 Sử dụng Phân tích Có sẵn", type="secondary"):
-                    st.session_state.col_analyses = cached_analysis['analysis']
-                    st.success("✅ Đã tải phân tích từ cache!")
-                    st.rerun()
+            use_cached = False
+            if cached_analysis:
+                use_cached = st.button("🔄 Tải lại từ Cache", type="secondary", use_container_width=True)
         
         with col_btn2:
-            if st.button("🚀 Chạy Phân tích Mới", type="primary"):
-                with st.spinner("🔄 Đang phân tích dữ liệu..."):
-                    col_analyses = perform_column_analysis(df, dataset_id)
-                    st.session_state.col_analyses = col_analyses
-                    st.success("✅ Hoàn thành phân tích mới!")
-                    st.rerun()
+            run_analysis = st.button("🚀 Chạy Phân tích Mới", type="primary", use_container_width=True)
         
         with col_btn3:
+            delete_cache = False
             if cached_analysis:
-                if st.button("🗑️ Xóa Cache", type="secondary"):
-                    delete_dataset_analysis(dataset_id)
-                    st.success("🗑️ Đã xóa cache phân tích!")
-                    st.rerun()
+                delete_cache = st.button("🗑️ Xóa Cache", type="secondary", use_container_width=True)
         
-        # Display analysis results
+        # Handle button actions
+        if use_cached:
+            try:
+                st.session_state.col_analyses = cached_analysis['analysis']
+                st.session_state.analysis_auto_loaded = False  # Reset auto-load flag
+                st.success("🔄 Đã tải lại phân tích từ cache!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Lỗi khi tải cache: {e}")
+        
+        if delete_cache:
+            try:
+                delete_dataset_analysis(dataset_id)
+                # Clear session state as well
+                if 'col_analyses' in st.session_state:
+                    del st.session_state['col_analyses']
+                if 'analysis_auto_loaded' in st.session_state:
+                    del st.session_state['analysis_auto_loaded']
+                st.success("🗑️ Đã xóa cache phân tích!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Lỗi khi xóa cache: {e}")
+        
+        # Create dedicated container for progress (will be managed by analysis function)
+        progress_container = st.empty()
+        
+        # Handle analysis execution
+        if run_analysis:
+            # Clear any existing analysis first
+            if 'col_analyses' in st.session_state:
+                del st.session_state['col_analyses']
+            if 'analysis_auto_loaded' in st.session_state:
+                del st.session_state['analysis_auto_loaded']
+            
+            # Run the analysis with progress tracking
+            col_analyses = perform_column_analysis(df, dataset_id, progress_container)
+            
+            if col_analyses:
+                st.session_state.col_analyses = col_analyses
+                st.session_state.analysis_auto_loaded = False
+                st.rerun()
+            else:
+                st.error("❌ Phân tích thất bại. Vui lòng thử lại.")
+        
+        # Display analysis results - IMPROVED LOGIC
+        current_analyses = None
+        
+        # Try to get analyses from session state first
         if hasattr(st.session_state, 'col_analyses'):
+            current_analyses = st.session_state.col_analyses
+            st.write("🎯 **Using data from session state**")
+        # Fallback: try to get from cache if session state is empty
+        elif cached_analysis and (not is_analysis_outdated(cached_analysis, dataset[4]) or force_load_cache):
+            try:
+                current_analyses = cached_analysis['analysis']
+                # Auto-load into session state for next time
+                st.session_state.col_analyses = current_analyses
+                st.session_state.analysis_auto_loaded = True
+                st.write("🎯 **Using data from cache (fallback)**")
+            except Exception as e:
+                st.error(f"Lỗi khi đọc từ cache: {e}")
+        
+        if current_analyses:
             st.markdown("---")
             
-            for analysis in st.session_state.col_analyses:
-                col_name = analysis['name']
+            # Show data source indicator
+            if st.session_state.get('analysis_auto_loaded', False):
+                st.info("📊 **Hiển thị kết quả từ cache** - Dữ liệu được tự động khôi phục từ phân tích trước đó.")
+            
+            st.markdown("### 📊 Kết quả Phân tích")
+            
+            # Validate analysis data
+            if not isinstance(current_analyses, list):
+                st.error(f"❌ Dữ liệu phân tích không hợp lệ. Kiểu: {type(current_analyses)}")
+                st.write("Raw data:", current_analyses)
+            elif len(current_analyses) == 0:
+                st.warning("⚠️ Dữ liệu phân tích trống")
+            else:
+                # Add summary statistics at the top
+                analyses = current_analyses
+                total_cols = len(analyses)
+                numeric_cols = len([a for a in analyses if a.get('type') == 'Numeric'])
+                categorical_cols = len([a for a in analyses if a.get('type') == 'Category']) 
+                missing_issues = len([a for a in analyses if a.get('missing_pct', 0) > 10])
                 
-                with st.container():
-                    st.markdown(f"""
-                    <div class="column-analysis-card">
-                        <h4>📌 {col_name}</h4>
-                    </div>
-                    """, unsafe_allow_html=True)
+                # Summary metrics with professional styling
+                st.markdown("#### 📈 Tổng quan Kết quả")
+                summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
+                
+                with summary_col1:
+                    st.metric("Tổng Cột", total_cols)
+                
+                with summary_col2:
+                    st.metric("Cột Số", numeric_cols)
+                
+                with summary_col3:
+                    st.metric("Cột Phân loại", categorical_cols)
+                
+                with summary_col4:
+                    delta_text = "Cần chú ý" if missing_issues > 0 else "Tốt"
+                    st.metric("Vấn đề Thiếu dữ liệu", missing_issues, delta=delta_text)
+                
+                st.markdown("---")
+                st.markdown("#### 🔍 Chi tiết từng Cột")
+                
+                # Display each column analysis
+                for analysis in analyses:
+                    col_name = analysis['name']
                     
-                    col_left, col_right = st.columns([2, 3])
-                    
-                    with col_left:
-                        # Basic statistics
-                        st.markdown(f"**🏷️ Loại:** `{analysis['type']}`")
-                        st.markdown(f"**📊 Kiểu dữ liệu:** `{analysis['dtype']}`")
-                        st.markdown(f"**🧩 Ý nghĩa:** {analysis['semantic']}")
-                        st.markdown(f"**🔢 Duy nhất:** `{analysis['unique']:,}`")
-                        st.markdown(f"**❌ Thiếu:** `{analysis['missing_pct']:.2f}%`")
+                    with st.container():
+                        st.markdown(f"""
+                        <div class="column-analysis-card">
+                            <h4>📌 {col_name}</h4>
+                        </div>
+                        """, unsafe_allow_html=True)
                         
-                        # Type-specific information
-                        if analysis['type'] == 'Numeric' and 'mean' in analysis:
-                            st.markdown(f"**📈 Trung bình:** `{analysis['mean']:.2f}`")
-                            st.markdown(f"**📊 Trung vị:** `{analysis['median']:.2f}`")
-                            st.markdown(f"**📏 Độ lệch chuẩn:** `{analysis['std']:.2f}`")
-                            st.markdown(f"**⚠️ Ngoại lệ:** `{analysis['outliers']}`")
-                            if 'skewness' in analysis:
-                                st.markdown(f"**↗️ Độ lệch:** `{analysis['skewness']:.2f}`")
+                        col_left, col_right = st.columns([2, 3])
                         
-                        elif analysis['type'] == 'Category' and 'value_counts' in analysis:
-                            st.markdown("**🏆 Top giá trị:**")
-                            for val, count in list(analysis['value_counts'].items())[:3]:
-                                st.markdown(f"  - `{val}`: {count}")
+                        with col_left:
+                            # Basic statistics
+                            st.markdown(f"**🏷️ Loại:** `{analysis['type']}`")
+                            st.markdown(f"**📊 Kiểu dữ liệu:** `{analysis['dtype']}`")
+                            st.markdown(f"**🧩 Ý nghĩa:** {analysis['semantic']}")
+                            st.markdown(f"**🔢 Duy nhất:** `{analysis['unique']:,}`")
+                            st.markdown(f"**❌ Thiếu:** `{analysis['missing_pct']:.2f}%`")
+                            
+                            # Type-specific information
+                            if analysis['type'] == 'Numeric' and 'mean' in analysis:
+                                st.markdown(f"**📈 Trung bình:** `{analysis['mean']:.2f}`")
+                                st.markdown(f"**📊 Trung vị:** `{analysis['median']:.2f}`")
+                                st.markdown(f"**📏 Độ lệch chuẩn:** `{analysis['std']:.2f}`")
+                                st.markdown(f"**⚠️ Ngoại lệ:** `{analysis['outliers']}`")
+                                if 'skewness' in analysis:
+                                    st.markdown(f"**↗️ Độ lệch:** `{analysis['skewness']:.2f}`")
+                            
+                            elif analysis['type'] == 'Category' and 'value_counts' in analysis:
+                                st.markdown("**🏆 Top giá trị:**")
+                                for val, count in list(analysis['value_counts'].items())[:3]:
+                                    st.markdown(f"  - `{val}`: {count}")
+                            
+                            elif analysis['type'] == 'Text' and 'avg_length' in analysis:
+                                st.markdown(f"**📝 Độ dài TB:** `{analysis['avg_length']:.1f}`")
+                                st.markdown(f"**📏 Độ dài tối đa:** `{analysis['max_length']}`")
+                            
+                            # Generate and display insight
+                            insight = generate_insight(analysis)
+                            if "✅" in insight:
+                                badge_class = "insight-badge"
+                            elif "⚠️" in insight:
+                                badge_class = "warning-badge"
+                            else:
+                                badge_class = "error-badge"
+                            
+                            st.markdown(f'<span class="{badge_class}">{insight}</span>', 
+                                      unsafe_allow_html=True)
                         
-                        elif analysis['type'] == 'Text' and 'avg_length' in analysis:
-                            st.markdown(f"**📝 Độ dài TB:** `{analysis['avg_length']:.1f}`")
-                            st.markdown(f"**📏 Độ dài tối đa:** `{analysis['max_length']}`")
+                        with col_right:
+                            # Distribution plot
+                            if analysis['type'] != 'Error':
+                                try:
+                                    plot_distribution(col_name, df[col_name])
+                                except Exception as e:
+                                    st.error(f"Lỗi vẽ biểu đồ cho {col_name}: {e}")
+                            else:
+                                st.error(f"Lỗi phân tích cột: {analysis.get('error', 'Unknown error')}")
                         
-                        # Generate and display insight
-                        insight = generate_insight(analysis)
-                        if "✅" in insight:
-                            badge_class = "insight-badge"
-                        elif "⚠️" in insight:
-                            badge_class = "warning-badge"
-                        else:
-                            badge_class = "error-badge"
-                        
-                        st.markdown(f'<span class="{badge_class}">{insight}</span>', 
-                                  unsafe_allow_html=True)
-                    
-                    with col_right:
-                        # Distribution plot
-                        if analysis['type'] != 'Error':
-                            plot_distribution(col_name, df[col_name])
-                        else:
-                            st.error(f"Lỗi phân tích cột: {analysis.get('error', 'Unknown error')}")
-                    
-                    st.markdown("---")
+                        st.markdown("---")
+        
+        else:
+            # No analysis available - show getting started message
+            st.markdown("---")
+            st.markdown("### 🚀 Bắt đầu Phân tích")
+            st.info("""
+            👆 **Chưa có dữ liệu phân tích nào.** 
+            
+            Nhấn nút **"🚀 Chạy Phân tích Mới"** để bắt đầu phân tích chi tiết từng cột với AI.
+            
+            Quá trình này sẽ:
+            - 🔍 Phân tích thống kê từng cột
+            - 🧠 Sử dụng AI để hiểu ý nghĩa dữ liệu  
+            - 💾 Lưu kết quả để sử dụng lại
+            - 📊 Tạo biểu đồ phân phối
+            """)
+            
+            # Show quick preview of what will be analyzed
+            st.markdown("#### 📋 Xem trước Cột sẽ được Phân tích")
+            preview_data = []
+            for col in df.columns[:10]:  # Show first 10 columns
+                col_type = "Số" if pd.api.types.is_numeric_dtype(df[col]) else "Văn bản"
+                missing_pct = df[col].isnull().mean() * 100
+                unique_count = df[col].nunique()
+                
+                preview_data.append({
+                    "Cột": col,
+                    "Loại": col_type,
+                    "Duy nhất": unique_count,
+                    "Thiếu (%)": f"{missing_pct:.1f}%"
+                })
+            
+            preview_df = pd.DataFrame(preview_data)
+            st.dataframe(preview_df, use_container_width=True)
+            
+            if len(df.columns) > 10:
+                st.caption(f"... và {len(df.columns) - 10} cột khác nữa")
 
     with tab2:
         st.markdown("### 🧼 Làm sạch Dữ liệu Thông minh")
@@ -746,33 +1032,61 @@ def main():
                     if st.button("🚀 Thực thi Làm sạch", type="primary"):
                         try:
                             with st.spinner("🔄 Đang làm sạch dữ liệu..."):
-                                # Prepare execution environment
-                                exec_globals = {
-                                    'df': df.copy(), 
-                                    'pd': pd, 
-                                    'np': np, 
-                                    'fix_numeric_strings': fix_numeric_strings,
-                                    'print': st.write  # Redirect print to streamlit
-                                }
+                                # Generate safe cleaning code
+                                st.info("🔧 Đang tạo mã làm sạch an toàn...")
+                                code_raw = generate_cleaning_code_from_plan(st.session_state.base_cleaning_plan)
+                                code_clean = extract_valid_code(code_raw)
+                                st.session_state.cleaning_code = code_clean
                                 
-                                # Execute cleaning code
-                                exec("df = fix_numeric_strings(df)\n" + st.session_state.cleaning_code, exec_globals)
-                                cleaned_df = exec_globals['df']
+                                # Execute safely
+                                st.info("⚡ Đang thực thi mã làm sạch...")
+                                cleaned_df, success = safe_execute_cleaning_code(code_clean, df)
                                 
-                                # Store cleaned data
-                                st.session_state.cleaned_df = cleaned_df
-                                st.session_state.raw_df = df
-                                
-                                st.success("✅ Làm sạch dữ liệu thành công!")
-                                
+                                if success:
+                                    # Store cleaned data
+                                    st.session_state.cleaned_df = cleaned_df
+                                    st.session_state.raw_df = df
+                                    
+                                    st.success("✅ Làm sạch dữ liệu thành công!")
+                                    
+                                    # Show before/after comparison
+                                    col1, col2 = st.columns(2)
+                                    
+                                    with col1:
+                                        st.markdown("**📊 Trước làm sạch:**")
+                                        st.write(f"Kích thước: {df.shape}")
+                                        st.write(f"Giá trị thiếu: {df.isnull().sum().sum()}")
+                                        st.write(f"Kiểu dữ liệu: {df.dtypes.nunique()} loại khác nhau")
+                                    
+                                    with col2:
+                                        st.markdown("**✨ Sau làm sạch:**")
+                                        st.write(f"Kích thước: {cleaned_df.shape}")
+                                        st.write(f"Giá trị thiếu: {cleaned_df.isnull().sum().sum()}")
+                                        st.write(f"Kiểu dữ liệu: {cleaned_df.dtypes.nunique()} loại khác nhau")
+                                        
+                                        # Calculate improvement
+                                        missing_reduction = df.isnull().sum().sum() - cleaned_df.isnull().sum().sum()
+                                        if missing_reduction > 0:
+                                            st.metric("Giảm thiểu missing", f"{missing_reduction:,}", delta="Cải thiện")
+                                    
+                                else:
+                                    st.error("❌ Làm sạch dữ liệu thất bại. Vui lòng kiểm tra lại kế hoạch làm sạch.")
+                                    
                         except Exception as e:
                             st.error(f"❌ Lỗi khi thực thi mã làm sạch: {str(e)}")
                             
                             # Show debugging info
                             with st.expander("🐛 Thông tin Debug"):
                                 st.write("**Lỗi chi tiết:**", str(e))
-                                st.write("**Mã đã thực thi:**")
-                                st.code(st.session_state.cleaning_code, language="python")
+                                if 'cleaning_code' in st.session_state:
+                                    st.write("**Mã đã thực thi:**")
+                                    st.code(st.session_state.cleaning_code, language="python")
+                                
+                                st.write("**DataFrame info:**")
+                                st.write(f"Shape: {df.shape}")
+                                st.write(f"Dtypes: {df.dtypes.to_dict()}")
+                                st.write("**Sample data:**")
+                                st.dataframe(df.head(3))
                 
                 # Show cleaned data preview
                 if hasattr(st.session_state, 'cleaned_df'):

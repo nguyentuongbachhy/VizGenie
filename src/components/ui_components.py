@@ -299,25 +299,31 @@ def render_professional_header(title: str, subtitle: str = "", icon: str = "🧠
     ''', unsafe_allow_html=True)
 
 def render_metric_cards(metrics: list):
-    """Render professional metric cards
+    """Render professional metric cards with safe delta handling
     
     Args:
         metrics: List of dicts with keys: title, value, delta (optional)
     """
+    if not metrics:
+        return
+        
     cols = st.columns(len(metrics))
     
     for i, metric in enumerate(metrics):
         with cols[i]:
+            # Safe delta handling - check if key exists
             delta_html = ""
-            if metric['delta']:
+            if metric.get('delta') is not None:
+                delta_value = metric.get('delta')
+                
                 # Handle both numeric and string delta values
-                if isinstance(metric['delta'], (int, float)):
-                    delta_color = "green" if metric['delta'] >= 0 else "red"
-                    delta_symbol = "↗" if metric['delta'] >= 0 else "↘"
-                    delta_html = f"<div style='color: {delta_color}; font-size: 0.8rem; margin-top: 0.5rem;'>{delta_symbol} {metric['delta']}</div>"
+                if isinstance(delta_value, (int, float)):
+                    delta_color = "green" if delta_value >= 0 else "red"
+                    delta_symbol = "↗" if delta_value >= 0 else "↘"
+                    delta_html = f"<div style='color: {delta_color}; font-size: 0.8rem; margin-top: 0.5rem;'>{delta_symbol} {delta_value}</div>"
                 else:
                     # For string deltas, determine color based on presence of '+' or positive words
-                    delta_str = str(metric['delta'])
+                    delta_str = str(delta_value)
                     if '+' in delta_str or any(word in delta_str.lower() for word in ['increase', 'up', 'growth', 'gain']):
                         delta_color = "green"
                         delta_symbol = "↗"
@@ -329,10 +335,14 @@ def render_metric_cards(metrics: list):
                         delta_symbol = "→"
                     delta_html = f"<div style='color: {delta_color}; font-size: 0.8rem; margin-top: 0.5rem;'>{delta_symbol} {delta_str}</div>"
             
+            # Get title and value safely
+            title = metric.get('title', 'Unknown')
+            value = metric.get('value', '0')
+            
             st.markdown(f'''
             <div class="metric-card">
-                <div class="metric-value">{metric['value']}</div>
-                <div class="metric-label">{metric['title']}</div>
+                <div class="metric-value">{value}</div>
+                <div class="metric-label">{title}</div>
                 {delta_html}
             </div>
             ''', unsafe_allow_html=True)

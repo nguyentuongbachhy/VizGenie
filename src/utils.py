@@ -43,7 +43,6 @@ def get_connection():
 def init_db():
     conn = get_connection()
     c = conn.cursor()
-    
     # Existing tables
     c.execute('''
         CREATE TABLE IF NOT EXISTS datasets (
@@ -434,65 +433,115 @@ def export_eda_report_to_pdf(eda_sections, df, summary_response, dataset_name):
     return pdf_bytes
 
 def save_dataset_analysis(dataset_id, analysis_data):
-    """Lưu kết quả phân tích dataset vào database"""
-    conn = get_connection()
-    c = conn.cursor()
-    
-    # Tạo bảng nếu chưa có
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS dataset_analysis (
-            dataset_id INTEGER PRIMARY KEY,
-            analysis_data TEXT,
-            created_at TEXT,
-            updated_at TEXT,
-            FOREIGN KEY (dataset_id) REFERENCES datasets(id)
-        )''')
-    
-    import json
-    from datetime import datetime
-    
-    # Chuyển analysis data thành JSON string
-    analysis_json = json.dumps(analysis_data, ensure_ascii=False, default=str)
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    # Insert hoặc update
-    c.execute('''
-        INSERT OR REPLACE INTO dataset_analysis 
-        (dataset_id, analysis_data, created_at, updated_at)
-        VALUES (?, ?, 
-                COALESCE((SELECT created_at FROM dataset_analysis WHERE dataset_id = ?), ?),
-                ?)
-    ''', (dataset_id, analysis_json, dataset_id, current_time, current_time))
-    
-    conn.commit()
-    conn.close()
+    """Lưu kết quả phân tích dataset vào database với debug chi tiết"""
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        
+        # Đảm bảo table tồn tại
+        c.execute('''
+            CREATE TABLE IF NOT EXISTS dataset_analysis (
+                dataset_id INTEGER PRIMARY KEY,
+                analysis_data TEXT,
+                created_at TEXT,
+                updated_at TEXT,
+                FOREIGN KEY (dataset_id) REFERENCES datasets(id)
+            )''')
+        import json
+        from datetime import datetime
+        
+        # Chuyển analysis data thành JSON string với xử lý lỗi
+        try:
+            analysis_json = json.dumps(analysis_data, ensure_ascii=False, default=str, indent=2)
+        except Exception as json_error:
+            raise json_error
+        
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # Kiểm tra xem record đã tồn tại chưa
+        c.execute('SELECT dataset_id FROM dataset_analysis WHERE dataset_id = ?', (dataset_id,))
+        existing = c.fetchone()
+        
+        if existing:
+            # Update existing record
+            c.execute('''
+                UPDATE dataset_analysis 
+                SET analysis_data = ?, updated_at = ?
+                WHERE dataset_id = ?
+            ''', (analysis_json, current_time, dataset_id))
+        else:
+            # Insert new record
+            c.execute('''
+                INSERT INTO dataset_analysis 
+                (dataset_id, analysis_data, created_at, updated_at)
+                VALUES (?, ?, ?, ?)
+            ''', (dataset_id, analysis_json, current_time, current_time))
+        
+        # Commit và đóng connection
+        conn.commit()
+        rows_affected = c.rowcount
+        
+        # Verify save
+        c.execute('SELECT dataset_id, created_at, updated_at FROM dataset_analysis WHERE dataset_id = ?', (dataset_id,))
+        verification = c.fetchone()
+        
+        conn.close()
+        
+        return True
+        
+    except Exception as e:
+        try:
+            conn.close()
+        except:
+            pass
+        return False
 
 def get_dataset_analysis(dataset_id):
-    """Lấy kết quả phân tích đã lưu của dataset"""
-    conn = get_connection()
-    c = conn.cursor()
-    
-    c.execute('''
-        SELECT analysis_data, created_at, updated_at 
-        FROM dataset_analysis 
-        WHERE dataset_id = ?
-    ''', (dataset_id,))
-    
-    result = c.fetchone()
-    conn.close()
-    
-    if result:
-        import json
-        try:
-            analysis_data = json.loads(result[0])
-            return {
-                'analysis': analysis_data,
-                'created_at': result[1], 
-                'updated_at': result[2]
-            }
-        except json.JSONDecodeError:
+    """Lấy kết quả phân tích đã lưu của dataset với debug chi tiết"""
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        
+        # Kiểm tra table tồn tại
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='dataset_analysis'")
+        table_exists = c.fetchone()
+        
+        if not table_exists:
+            conn.close()
             return None
-    return None
+        
+        # Lấy data
+        c.execute('''
+            SELECT analysis_data, created_at, updated_at 
+            FROM dataset_analysis 
+            WHERE dataset_id = ?
+        ''', (dataset_id,))
+        
+        result = c.fetchone()
+        
+        conn.close()
+        
+        if result:
+            import json
+            try:
+                analysis_data = json.loads(result[0])
+                
+                return {
+                    'analysis': analysis_data,
+                    'created_at': result[1], 
+                    'updated_at': result[2]
+                }
+            except json.JSONDecodeError as json_error:
+                return None
+        else:
+            return None
+            
+    except Exception as e:
+        try:
+            conn.close()
+        except:
+            pass
+        return None
 
 def delete_dataset_analysis(dataset_id):
     """Xóa phân tích dataset khi dataset bị xóa"""
@@ -503,17 +552,83 @@ def delete_dataset_analysis(dataset_id):
     conn.close()
 
 def is_analysis_outdated(analysis_info, dataset_upload_time):
-    """Kiểm tra xem phân tích có cũ hơn dataset không"""
+    """Kiểm tra xem phân tích có cũ hơn dataset không với debug chi tiết"""
     from datetime import datetime
-    
     if not analysis_info:
         return True
     
     try:
-        analysis_time = datetime.strptime(analysis_info['updated_at'], "%Y-%m-%d %H:%M:%S")
-        dataset_time = datetime.strptime(dataset_upload_time, "%Y-%m-%d %H:%M:%S")
+        # Get analysis time
+        analysis_updated_at = analysis_info.get('updated_at')
+        if not analysis_updated_at:
+            return True
+        
+        # Parse analysis time
+        try:
+            analysis_time = datetime.strptime(analysis_updated_at, "%Y-%m-%d %H:%M:%S")
+        except Exception as parse_error:
+            return True
+        
+        # Parse dataset time
+        try:
+            dataset_time = datetime.strptime(dataset_upload_time, "%Y-%m-%d %H:%M:%S")
+        except Exception as parse_error:
+            return True
+        
+        # Compare times
+        is_outdated = dataset_time > analysis_time
         
         # Nếu dataset được upload sau khi phân tích -> cần phân tích lại
-        return dataset_time > analysis_time
-    except:
+        return is_outdated
+        
+    except Exception as e:
+        import traceback
         return True
+
+def get_dataset_analysis_with_debug(dataset_id):
+    """Lấy kết quả phân tích đã lưu của dataset với debug chi tiết và fix"""
+    try:
+        conn = get_connection()
+        c = conn.cursor()
+        
+        # Kiểm tra table tồn tại
+        c.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='dataset_analysis'")
+        table_exists = c.fetchone()
+        if not table_exists:
+            conn.close()
+            return None
+        
+        # Lấy data
+        c.execute('''
+            SELECT analysis_data, created_at, updated_at 
+            FROM dataset_analysis 
+            WHERE dataset_id = ?
+        ''', (dataset_id,))
+        
+        result = c.fetchone()
+        
+        conn.close()
+        
+        if result:
+            import json
+            try:
+                analysis_data = json.loads(result[0])
+                cache_result = {
+                    'analysis': analysis_data,
+                    'created_at': result[1], 
+                    'updated_at': result[2]
+                }
+                
+                return cache_result
+                
+            except json.JSONDecodeError as json_error:
+                return None
+        else:
+            return None
+            
+    except Exception as e:
+        try:
+            conn.close()
+        except:
+            pass
+        return None

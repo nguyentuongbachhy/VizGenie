@@ -3,7 +3,7 @@ import streamlit as st
 from src.utils import init_db, get_all_datasets, get_chart_cards_by_dataset, get_dataset, safe_read_csv, execute_plt_code, delete_chart_card
 
 
-st.set_page_config(page_title="📊 Tóm tắt Trực quan", layout="wide")
+st.set_page_config(page_title="Tóm tắt Trực quan", layout="wide")
 st.title("📊 Lịch sử Biểu đồ")
 
 # Initialize database

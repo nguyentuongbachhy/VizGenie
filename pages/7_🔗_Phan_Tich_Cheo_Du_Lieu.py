@@ -17,7 +17,7 @@ import json
 import re
 warnings.filterwarnings('ignore')
 
-st.set_page_config(page_title="🔗 Phân Tích Chéo Dữ Liệu", layout="wide")
+st.set_page_config(page_title="Phân Tích Chéo Dữ Liệu", layout="wide")
 
 # Enhanced styling
 st.markdown("""

@@ -7,8 +7,7 @@ from src.utils import init_db, add_dataset, get_all_datasets, delete_dataset, re
 # Import UI components
 from src.components.ui_components import (
     render_professional_header, render_metric_cards, render_feature_card,
-    render_insight_card, create_data_quality_indicator, render_interactive_data_explorer,
-    create_ai_recommendation_panel, render_animated_loading, PROFESSIONAL_CSS
+    render_insight_card, create_data_quality_indicator, PROFESSIONAL_CSS
 )
 
 import plotly.express as px
@@ -17,7 +16,7 @@ from plotly.subplots import make_subplots
 import numpy as np
 import time
 
-st.set_page_config(page_title="📂 Bảng điều khiển Chuyên nghiệp", layout="wide", page_icon="📊")
+st.set_page_config(page_title="Bảng điều khiển Chuyên nghiệp", layout="wide", page_icon="📊")
 
 # Apply professional styling
 st.markdown(PROFESSIONAL_CSS, unsafe_allow_html=True)
@@ -49,228 +48,365 @@ def show_loading_animation(text="Đang xử lý..."):
     """, unsafe_allow_html=True)
 
 def create_enhanced_analytics_dashboard(datasets):
-    """Create comprehensive analytics dashboard with proper spacing and fallbacks"""
+    """Create a beautiful dark theme professional analytics dashboard"""
     try:
-        # Create subplot with better spacing
+        # Validate input data
+        if not datasets or len(datasets) == 0:
+            return create_empty_dashboard_placeholder()
+
+        # Prepare data with enhanced validation
+        dataset_info = []
+        for d in datasets:
+            try:
+                if len(d) >= 5:
+                    name = str(d[1])[:15] + "..." if len(str(d[1])) > 15 else str(d[1])
+                    rows = max(0, int(d[2]) if d[2] is not None else 0)
+                    cols = max(1, int(d[3]) if d[3] is not None else 1)
+                    
+                    try:
+                        upload_date = datetime.strptime(str(d[4]), "%Y-%m-%d %H:%M:%S")
+                    except:
+                        upload_date = datetime.now()
+                    
+                    dataset_info.append({
+                        'name': name,
+                        'rows': rows,
+                        'cols': cols,
+                        'date': upload_date.date(),
+                        'density': rows / cols if cols > 0 else 0,
+                        'size_category': get_size_category(rows)
+                    })
+            except Exception:
+                continue
+
+        if not dataset_info:
+            return create_empty_dashboard_placeholder()
+
+        # Create beautiful subplot layout
         fig = make_subplots(
             rows=2, cols=2,
             subplot_titles=[
-                '📊 Kích thước Bộ dữ liệu (Bản ghi)', 
-                '📅 Dòng thời gian Tải lên', 
-                '📋 Phân phối Số cột', 
-                '💎 Điểm Mật độ Dữ liệu'
+                '📊 Dataset Size Overview', 
+                '📈 Upload Timeline', 
+                '🔢 Column Distribution', 
+                '💎 Data Density Analysis'
             ],
-            specs=[[{"secondary_y": False}, {"secondary_y": False}],
-                   [{"secondary_y": False}, {"secondary_y": False}]],
-            vertical_spacing=0.15,  # Increased spacing
+            vertical_spacing=0.15,
             horizontal_spacing=0.12
         )
         
-        # Prepare data with validation
-        dataset_names = []
-        dataset_sizes = []
-        dataset_cols = []
-        upload_dates = []
+        # Dark theme color palette - vibrant colors that pop on dark background
+        colors = {
+            'primary': '#00d4ff',      # Bright cyan
+            'secondary': '#ff6b9d',    # Pink
+            'accent': '#c44569',       # Dark pink
+            'success': '#00ff88',      # Bright green
+            'warning': '#ffeb3b',      # Bright yellow
+            'info': '#7c4dff',         # Purple
+            'gradient': ['#00d4ff', '#ff6b9d', '#00ff88', '#ffeb3b', '#7c4dff', '#ff5722']
+        }
         
-        for d in datasets:
-            try:
-                name = d[1][:20] + "..." if len(d[1]) > 20 else d[1]
-                dataset_names.append(name)
-                dataset_sizes.append(max(0, d[2]))  # Ensure non-negative
-                dataset_cols.append(max(1, d[3]))   # Ensure at least 1
-                upload_dates.append(datetime.strptime(d[4], "%Y-%m-%d %H:%M:%S").date())
-            except Exception as e:
-                continue  # Skip invalid entries
+        # Chart 1: Neon-style Dataset Sizes
+        top_datasets = sorted(dataset_info, key=lambda x: x['rows'], reverse=True)[:8]
+        names = [info['name'] for info in top_datasets]
+        sizes = [info['rows'] for info in top_datasets]
         
-        if not dataset_names:
-            # Fallback empty chart
-            fig.add_annotation(text="Không có dữ liệu để hiển thị", 
-                             xref="paper", yref="paper", x=0.5, y=0.5,
-                             showarrow=False, font=dict(size=16))
-            return fig
-        
-        # Chart 1: Dataset sizes with better spacing
-        colors = ['#667eea', '#764ba2', '#56CCF2', '#2F80ED', '#FF6B6B', '#FF8E53', '#4ECDC4', '#45B7D1'] * 10
-        
-        # Limit to top 10 datasets for better readability
-        top_indices = sorted(range(len(dataset_sizes)), key=lambda i: dataset_sizes[i], reverse=True)[:10]
-        top_names = [dataset_names[i] for i in top_indices]
-        top_sizes = [dataset_sizes[i] for i in top_indices]
+        # Create gradient effect
+        max_size = max(sizes) if sizes else 1
+        bar_colors = []
+        for size in sizes:
+            intensity = size / max_size
+            bar_colors.append(f'rgba(0, 212, 255, {0.3 + 0.7 * intensity})')
         
         fig.add_trace(
             go.Bar(
-                x=top_names, 
-                y=top_sizes, 
-                name="Bản ghi",
+                x=names,
+                y=sizes,
                 marker=dict(
-                    color=colors[:len(top_names)], 
-                    opacity=0.8,
-                    line=dict(color='rgba(0,0,0,0.1)', width=1)
+                    color=bar_colors,
+                    line=dict(color=colors['primary'], width=2),
+                    pattern=dict(shape="")
                 ),
-                text=[f"{size:,}" for size in top_sizes],
+                text=[f"{size:,}" for size in sizes],
                 textposition="outside",
-                textfont=dict(size=10),
-                hovertemplate="<b>%{x}</b><br>Bản ghi: %{y:,}<extra></extra>"
+                textfont=dict(color='white', size=11, family="Arial Bold"),
+                name="Records",
+                hovertemplate=(
+                    "<b style='color:#00d4ff'>%{x}</b><br>"
+                    "Records: <b>%{y:,}</b><br>"
+                    "<extra></extra>"
+                )
             ),
             row=1, col=1
         )
         
-        # Update x-axis for better readability
-        fig.update_xaxes(
-            tickangle=-45, 
-            tickfont=dict(size=9),
-            row=1, col=1
-        )
+        # Chart 2: Glowing Timeline
+        date_counts = {}
+        for info in dataset_info:
+            date_str = info['date'].strftime("%Y-%m-%d")
+            date_counts[date_str] = date_counts.get(date_str, 0) + 1
         
-        # Chart 2: Upload timeline with trend
-        upload_counts = {}
-        for date in upload_dates:
-            upload_counts[date] = upload_counts.get(date, 0) + 1
-        
-        if upload_counts:
-            sorted_dates = sorted(upload_counts.keys())
-            daily_counts = [upload_counts[date] for date in sorted_dates]
+        if date_counts:
+            dates = sorted(date_counts.keys())
+            daily_counts = [date_counts[date] for date in dates]
             
             # Calculate cumulative
-            cumulative_counts = []
+            cumulative = []
             total = 0
             for count in daily_counts:
                 total += count
-                cumulative_counts.append(total)
+                cumulative.append(total)
             
+            # Main cumulative line with glow effect
             fig.add_trace(
                 go.Scatter(
-                    x=sorted_dates, 
-                    y=cumulative_counts,
-                    mode='lines+markers', 
-                    name="Tích lũy",
-                    line=dict(color='#764ba2', width=3, shape='spline'),
-                    marker=dict(size=8, color='#667eea', symbol='circle'),
-                    hovertemplate="<b>%{x}</b><br>Tổng cộng: %{y}<extra></extra>",
-                    fill='tonexty' if len(sorted_dates) > 1 else None,
-                    fillcolor='rgba(102, 126, 234, 0.1)'
+                    x=dates,
+                    y=cumulative,
+                    mode='lines+markers',
+                    line=dict(
+                        color=colors['secondary'], 
+                        width=4,
+                        shape='spline'
+                    ),
+                    marker=dict(
+                        size=10, 
+                        color=colors['primary'],
+                        line=dict(color='white', width=2)
+                    ),
+                    fill='tonexty',
+                    fillcolor='rgba(255, 107, 157, 0.2)',
+                    name="Total Datasets",
+                    hovertemplate=(
+                        "<b>Date:</b> %{x}<br>"
+                        "<b>Total:</b> %{y}<br>"
+                        "<extra></extra>"
+                    )
+                ),
+                row=1, col=2
+            )
+            
+            # Add daily bars with glow
+            fig.add_trace(
+                go.Bar(
+                    x=dates,
+                    y=daily_counts,
+                    marker=dict(
+                        color='rgba(0, 255, 136, 0.4)',
+                        line=dict(color=colors['success'], width=1)
+                    ),
+                    name="Daily",
+                    opacity=0.6,
+                    hovertemplate=(
+                        "<b>Date:</b> %{x}<br>"
+                        "<b>New uploads:</b> %{y}<br>"
+                        "<extra></extra>"
+                    )
                 ),
                 row=1, col=2
             )
         
-        # Chart 3: Column distribution with better bins
-        if dataset_cols:
+        # Chart 3: Neon Column Distribution
+        col_counts = [info['cols'] for info in dataset_info]
+        if col_counts:
             fig.add_trace(
                 go.Histogram(
-                    x=dataset_cols, 
-                    name="Số cột",
+                    x=col_counts,
                     marker=dict(
-                        color='#56CCF2', 
-                        opacity=0.8,
-                        line=dict(color='rgba(0,0,0,0.2)', width=1)
+                        color='rgba(255, 235, 59, 0.7)',
+                        line=dict(color=colors['warning'], width=2)
                     ),
-                    nbinsx=min(10, max(5, len(set(dataset_cols)))),
-                    hovertemplate="Số cột: %{x}<br>Số lượng: %{y}<extra></extra>"
+                    name="Columns",
+                    hovertemplate="Columns: %{x}<br>Count: %{y}<extra></extra>"
                 ),
                 row=2, col=1
             )
         
-        # Chart 4: Data density scatter with better visualization
-        density_scores = []
-        for i in range(len(dataset_sizes)):
-            if dataset_cols[i] > 0:
-                density_scores.append(dataset_sizes[i] / dataset_cols[i])
-            else:
-                density_scores.append(0)
+        # Chart 4: Glowing Density Bubbles
+        densities = [info['density'] for info in dataset_info]
+        bubble_sizes = [min(40, max(15, info['rows']/500)) for info in dataset_info]
         
-        if density_scores:
-            # Create size array for bubble chart
-            bubble_sizes = [min(50, max(15, size/1000)) for size in dataset_sizes]
-            
-            fig.add_trace(
-                go.Scatter(
-                    x=list(range(len(dataset_names))), 
-                    y=density_scores, 
-                    mode='markers',
-                    name="Mật độ",
-                    marker=dict(
-                        size=bubble_sizes,
-                        color=density_scores,
-                        colorscale='Viridis',
-                        showscale=True,
-                        colorbar=dict(
-                            title="Mật độ<br>(bản ghi/cột)",
-                            titleside="right",
-                            tickmode="linear",
-                            tick0=0,
-                            dtick=max(1, max(density_scores)//5) if density_scores else 1
-                        ),
-                        line=dict(color='rgba(0,0,0,0.2)', width=1),
-                        opacity=0.8
-                    ),
-                    text=[f"{name}<br>Mật độ: {score:.1f}<br>Kích thước: {size:,}" 
-                          for name, score, size in zip(dataset_names, density_scores, dataset_sizes)],
-                    hovertemplate="<b>%{text}</b><extra></extra>",
-                    customdata=dataset_names
+        # Color mapping based on size category
+        category_colors = {
+            'Small': colors['success'],
+            'Medium': colors['warning'], 
+            'Large': colors['primary'],
+            'Very Large': colors['secondary']
+        }
+        
+        bubble_colors = [category_colors.get(info['size_category'], colors['primary']) for info in dataset_info]
+        
+        fig.add_trace(
+            go.Scatter(
+                x=list(range(len(dataset_info))),
+                y=densities,
+                mode='markers',
+                marker=dict(
+                    size=bubble_sizes,
+                    color=bubble_colors,
+                    opacity=0.8,
+                    line=dict(color='white', width=2)
                 ),
-                row=2, col=2
-            )
-            
-            # Update x-axis to show dataset names
-            fig.update_xaxes(
-                tickvals=list(range(len(dataset_names))),
-                ticktext=[name[:10] + "..." if len(name) > 10 else name for name in dataset_names],
-                tickangle=-45,
-                tickfont=dict(size=9),
-                row=2, col=2
-            )
-        
-        # Update layout with professional styling and better spacing
-        fig.update_layout(
-            height=700,  # Increased height
-            showlegend=False,
-            title=dict(
-                text="📊 Tổng quan Phân tích Bộ dữ liệu",
-                x=0.5,
-                font=dict(size=20, color='#2c3e50', family="Inter, sans-serif")
+                text=[info['name'] for info in dataset_info],
+                customdata=[info['size_category'] for info in dataset_info],
+                name="Density",
+                hovertemplate=(
+                    "<b>%{text}</b><br>"
+                    "Density: <b>%{y:.1f}</b><br>"
+                    "Category: <b>%{customdata}</b><br>"
+                    "<extra></extra>"
+                )
             ),
-            font=dict(family="Inter, sans-serif", size=11),
-            plot_bgcolor='rgba(248,249,250,0.8)',
-            paper_bgcolor='rgba(0,0,0,0)',
-            margin=dict(t=80, l=60, r=60, b=80)
+            row=2, col=2
         )
         
-        # Update individual subplot styling with better spacing
-        for i in range(1, 3):
-            for j in range(1, 3):
+        # Apply dark theme styling
+        fig.update_layout(
+            height=650,
+            showlegend=False,
+            title=dict(
+                text="🌟 VizGenie-GPT Analytics Dashboard",
+                x=0.5,
+                font=dict(size=22, color='#ffffff', family="Arial Black")
+            ),
+            font=dict(size=11, color='#e0e0e0'),
+            # Dark theme colors
+            plot_bgcolor='#1a1a1a',
+            paper_bgcolor='#0d1117',
+            margin=dict(t=80, l=60, r=60, b=60)
+        )
+        
+        # Update subplot titles for dark theme
+        for annotation in fig['layout']['annotations'][:4]:  # First 4 are subplot titles
+            annotation.update(
+                font=dict(size=13, color='#ffffff', family="Arial Bold"),
+                bgcolor='rgba(255, 255, 255, 0.1)',
+                bordercolor='rgba(0, 212, 255, 0.5)',
+                borderwidth=1,
+                borderpad=8
+            )
+        
+        # Style axes for dark theme - safe approach
+        # Apply to all subplots individually to avoid conflicts
+        for row in [1, 2]:
+            for col in [1, 2]:
                 fig.update_xaxes(
-                    gridcolor='rgba(225,229,233,0.8)',
+                    gridcolor='rgba(255, 255, 255, 0.1)',
                     gridwidth=1,
-                    zeroline=False,
                     showline=True,
-                    linecolor='rgba(225,229,233,0.8)',
-                    row=i, col=j
+                    linecolor='rgba(255, 255, 255, 0.3)',
+                    linewidth=1,
+                    tickfont_color='#e0e0e0',
+                    row=row, col=col
                 )
                 fig.update_yaxes(
-                    gridcolor='rgba(225,229,233,0.8)', 
+                    gridcolor='rgba(255, 255, 255, 0.1)',
                     gridwidth=1,
-                    zeroline=False,
                     showline=True,
-                    linecolor='rgba(225,229,233,0.8)',
-                    row=i, col=j
+                    linecolor='rgba(255, 255, 255, 0.3)',
+                    linewidth=1,
+                    tickfont_color='#e0e0e0',
+                    row=row, col=col
                 )
+        
+        # Specific styling for each chart
+        fig.update_xaxes(tickangle=-45, row=1, col=1)
+        fig.update_yaxes(tickformat=',.0f', row=1, col=1)
+        
+        # Add subtle glow effect annotation
+        fig.add_annotation(
+            text="✨ Professional Analytics Suite • Powered by AI",
+            xref="paper", yref="paper",
+            x=0.5, y=-0.05,
+            showarrow=False,
+            font=dict(size=10, color='rgba(255, 255, 255, 0.6)'),
+            xanchor='center'
+        )
         
         return fig
         
     except Exception as e:
-        # Fallback chart in case of any error
-        fallback_fig = go.Figure()
-        fallback_fig.add_annotation(
-            text=f"Lỗi tạo biểu đồ: {str(e)}<br>Vui lòng thử lại sau",
-            xref="paper", yref="paper", x=0.5, y=0.5,
-            showarrow=False, font=dict(size=14, color="red")
-        )
-        fallback_fig.update_layout(
-            height=400,
-            title="Dashboard Analytics",
-            template="plotly_white"
-        )
-        return fallback_fig
+        return create_error_dashboard(str(e))
+
+def get_size_category(rows):
+    """Categorize dataset size"""
+    if rows < 1000:
+        return "Small"
+    elif rows < 10000:
+        return "Medium"
+    elif rows < 100000:
+        return "Large"
+    else:
+        return "Very Large"
+
+def create_empty_dashboard_placeholder():
+    """Create beautiful dark empty state"""
+    fig = go.Figure()
+    
+    fig.add_annotation(
+        text=(
+            "🌟 Welcome to VizGenie-GPT Analytics<br><br>"
+            "📊 Upload your first dataset to unlock beautiful insights<br>"
+            "💡 Professional dark-theme analytics powered by AI<br><br>"
+            "<i style='color:#00d4ff'>Ready to illuminate your data!</i>"
+        ),
+        xref="paper", yref="paper",
+        x=0.5, y=0.5,
+        showarrow=False,
+        font=dict(size=16, color='#ffffff'),
+        bgcolor='rgba(0, 212, 255, 0.1)',
+        bordercolor='rgba(0, 212, 255, 0.5)',
+        borderwidth=2,
+        borderpad=30,
+        align='center'
+    )
+    
+    fig.update_layout(
+        height=500,
+        title=dict(
+            text="🌟 VizGenie-GPT Analytics Dashboard",
+            x=0.5,
+            font=dict(size=22, color='#ffffff', family="Arial Black")
+        ),
+        plot_bgcolor='#1a1a1a',
+        paper_bgcolor='#0d1117',
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False)
+    )
+    
+    return fig
+
+def create_error_dashboard(error_msg):
+    """Create beautiful dark error state"""
+    fig = go.Figure()
+    
+    fig.add_annotation(
+        text=(
+            f"⚠️ Dashboard Error<br><br>"
+            f"Something went wrong while creating your analytics dashboard.<br>"
+            f"<small style='color:#ff6b9d'>Error: {error_msg[:100]}...</small><br><br>"
+            f"💡 Please try refreshing the page or contact support."
+        ),
+        xref="paper", yref="paper",
+        x=0.5, y=0.5,
+        showarrow=False,
+        font=dict(size=14, color='#ff5722'),
+        bgcolor='rgba(255, 87, 34, 0.1)',
+        bordercolor='rgba(255, 87, 34, 0.5)',
+        borderwidth=2,
+        borderpad=20,
+        align='center'
+    )
+    
+    fig.update_layout(
+        height=400,
+        title="🌟 Dashboard Error",
+        plot_bgcolor='#1a1a1a',
+        paper_bgcolor='#0d1117',
+        xaxis=dict(visible=False),
+        yaxis=dict(visible=False)
+    )
+    
+    return fig
 
 def perform_ai_deep_analysis(datasets):
     """Perform AI deep analysis with loading indicators and error handling"""
@@ -473,10 +609,26 @@ if datasets:
     
     # Professional metric cards with enhanced data
     metrics = [
-        {"title": "Tổng Bộ dữ liệu", "value": f"{total_datasets}", "delta": "+3 tuần này"},
-        {"title": "Tổng Bản ghi", "value": f"{total_rows:,}", "delta": f"+{total_rows//10:,} gần đây"},
-        {"title": "Trường Dữ liệu", "value": f"{total_cols}", "delta": None},
-        {"title": "Dung lượng", "value": f"{total_size_mb:.1f}MB", "delta": None}
+        {
+            "title": "Tổng Bộ dữ liệu", 
+            "value": f"{total_datasets}", 
+            "delta": "+3 tuần này" if total_datasets > 0 else None
+        },
+        {
+            "title": "Tổng Bản ghi", 
+            "value": f"{total_rows:,}", 
+            "delta": f"+{total_rows//10:,} gần đây" if total_rows > 0 else None
+        },
+        {
+            "title": "Trường Dữ liệu", 
+            "value": f"{total_cols}", 
+            "delta": None
+        },
+        {
+            "title": "Dung lượng", 
+            "value": f"{total_size_mb:.1f}MB", 
+            "delta": None
+        }
     ]
     
     render_metric_cards(metrics)
@@ -633,10 +785,10 @@ if datasets:
                     st.markdown("#### 🎯 Thống kê Nhanh")
                     
                     dataset_metrics = [
-                        {"title": "Cột Số", "value": str(len(numeric_cols))},
-                        {"title": "Cột Văn bản", "value": str(len(categorical_cols))},
-                        {"title": "Thiếu", "value": str(missing_values)},
-                        {"title": "Chất lượng", "value": f"{quality_score:.0%}"}
+                        {"title": "Cột Số", "value": str(len(numeric_cols)), "delta": None},
+                        {"title": "Cột Văn bản", "value": str(len(categorical_cols)), "delta": None},
+                        {"title": "Thiếu", "value": str(missing_values), "delta": None},
+                        {"title": "Chất lượng", "value": f"{quality_score:.0%}", "delta": None}
                     ]
                     
                     render_metric_cards(dataset_metrics)
@@ -839,12 +991,22 @@ with st.sidebar:
         st.markdown("### 🎯 Thống kê Nhanh")
         
         # Overall statistics
-        total_size_mb = sum(os.path.getsize(os.path.join("data", "uploads", d[1])) for d in datasets if os.path.exists(os.path.join("data", "uploads", d[1]))) / (1024 * 1024)
+        try:
+            total_size_mb = 0
+            for d in datasets:
+                try:
+                    file_path = os.path.join("data", "uploads", d[1])
+                    if os.path.exists(file_path):
+                        total_size_mb += os.path.getsize(file_path) / (1024 * 1024)
+                except:
+                    continue
+        except:
+            total_size_mb = 0
         
         quick_stats = [
             {"title": "Bộ dữ liệu", "value": str(len(datasets)), "delta": None},
             {"title": "Tổng Kích thước", "value": f"{total_size_mb:.1f}MB", "delta": None},
-            {"title": "Lớn nhất", "value": f"{max(d[2] for d in datasets):,}", "delta": None}
+            {"title": "Lớn nhất", "value": f"{max(d[2] for d in datasets):,}" if datasets else "0", "delta": None}
         ]
         
         render_metric_cards(quick_stats)

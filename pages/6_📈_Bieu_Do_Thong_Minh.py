@@ -11,7 +11,7 @@ import numpy as np
 import warnings
 warnings.filterwarnings('ignore')
 
-st.set_page_config(page_title="📈 Biểu Đồ Thông Minh Nâng Cao", layout="wide")
+st.set_page_config(page_title="Biểu Đồ Thông Minh Nâng Cao", layout="wide")
 
 # Professional styling with modern color schemes
 st.markdown("""
