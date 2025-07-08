@@ -43,6 +43,8 @@ def get_connection():
 def init_db():
     conn = get_connection()
     c = conn.cursor()
+    
+    # Existing tables
     c.execute('''
         CREATE TABLE IF NOT EXISTS datasets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,6 +55,7 @@ def init_db():
             upload_time TEXT,
             status TEXT
         )''')
+    
     c.execute('''
         CREATE TABLE IF NOT EXISTS chat_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,6 +65,7 @@ def init_db():
             answer TEXT,
             FOREIGN KEY (dataset_id) REFERENCES datasets(id)
         )''')
+    
     c.execute('''
         CREATE TABLE IF NOT EXISTS chart_cards (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -72,6 +76,7 @@ def init_db():
             created_at TEXT,
             FOREIGN KEY (dataset_id) REFERENCES datasets(id)
         )''')
+    
     c.execute('''
         CREATE TABLE IF NOT EXISTS chat_sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,6 +84,7 @@ def init_db():
             title TEXT,
             created_at TEXT
         )''')
+    
     c.execute('''
         CREATE TABLE IF NOT EXISTS chat_messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,6 +93,15 @@ def init_db():
             content TEXT,
             created_at TEXT,
             FOREIGN KEY (session_id) REFERENCES chat_sessions(id)
+        )''')
+    
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS dataset_analysis (
+            dataset_id INTEGER PRIMARY KEY,
+            analysis_data TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            FOREIGN KEY (dataset_id) REFERENCES datasets(id)
         )''')
     conn.commit()
     conn.close()
@@ -240,8 +255,8 @@ def delete_dataset(dataset_id):
     c.execute('DELETE FROM chat_messages WHERE session_id IN (SELECT id FROM chat_sessions WHERE dataset_id = ?)', (dataset_id,))
     c.execute('DELETE FROM chat_sessions WHERE dataset_id = ?', (dataset_id,))
     c.execute('DELETE FROM chart_cards WHERE dataset_id = ?', (dataset_id,))
+    c.execute('DELETE FROM dataset_analysis WHERE dataset_id = ?', (dataset_id,))  # Thêm dòng này
 
-    # Xoá chính dataset
     c.execute('DELETE FROM datasets WHERE id = ?', (dataset_id,))
     
     conn.commit()
@@ -417,3 +432,88 @@ def export_eda_report_to_pdf(eda_sections, df, summary_response, dataset_name):
     buffer.close()
     
     return pdf_bytes
+
+def save_dataset_analysis(dataset_id, analysis_data):
+    """Lưu kết quả phân tích dataset vào database"""
+    conn = get_connection()
+    c = conn.cursor()
+    
+    # Tạo bảng nếu chưa có
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS dataset_analysis (
+            dataset_id INTEGER PRIMARY KEY,
+            analysis_data TEXT,
+            created_at TEXT,
+            updated_at TEXT,
+            FOREIGN KEY (dataset_id) REFERENCES datasets(id)
+        )''')
+    
+    import json
+    from datetime import datetime
+    
+    # Chuyển analysis data thành JSON string
+    analysis_json = json.dumps(analysis_data, ensure_ascii=False, default=str)
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Insert hoặc update
+    c.execute('''
+        INSERT OR REPLACE INTO dataset_analysis 
+        (dataset_id, analysis_data, created_at, updated_at)
+        VALUES (?, ?, 
+                COALESCE((SELECT created_at FROM dataset_analysis WHERE dataset_id = ?), ?),
+                ?)
+    ''', (dataset_id, analysis_json, dataset_id, current_time, current_time))
+    
+    conn.commit()
+    conn.close()
+
+def get_dataset_analysis(dataset_id):
+    """Lấy kết quả phân tích đã lưu của dataset"""
+    conn = get_connection()
+    c = conn.cursor()
+    
+    c.execute('''
+        SELECT analysis_data, created_at, updated_at 
+        FROM dataset_analysis 
+        WHERE dataset_id = ?
+    ''', (dataset_id,))
+    
+    result = c.fetchone()
+    conn.close()
+    
+    if result:
+        import json
+        try:
+            analysis_data = json.loads(result[0])
+            return {
+                'analysis': analysis_data,
+                'created_at': result[1], 
+                'updated_at': result[2]
+            }
+        except json.JSONDecodeError:
+            return None
+    return None
+
+def delete_dataset_analysis(dataset_id):
+    """Xóa phân tích dataset khi dataset bị xóa"""
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute('DELETE FROM dataset_analysis WHERE dataset_id = ?', (dataset_id,))
+    conn.commit()
+    conn.close()
+
+def is_analysis_outdated(analysis_info, dataset_upload_time):
+    """Kiểm tra xem phân tích có cũ hơn dataset không"""
+    from datetime import datetime
+    
+    if not analysis_info:
+        return True
+    
+    try:
+        analysis_time = datetime.strptime(analysis_info['updated_at'], "%Y-%m-%d %H:%M:%S")
+        dataset_time = datetime.strptime(dataset_upload_time, "%Y-%m-%d %H:%M:%S")
+        
+        # Nếu dataset được upload sau khi phân tích -> cần phân tích lại
+        return dataset_time > analysis_time
+    except:
+        return True

@@ -3,7 +3,9 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import re
-from src.utils import get_all_datasets, get_dataset
+from src.utils import (get_all_datasets, get_dataset, 
+                       save_dataset_analysis, get_dataset_analysis, 
+                       delete_dataset_analysis, is_analysis_outdated)
 from src.models.llms import load_llm
 import json
 import time
@@ -56,6 +58,14 @@ st.markdown("""
         display: inline-block;
         margin: 0.25rem 0;
     }
+    .cache-info {
+        background: #e3f2fd;
+        border: 1px solid #2196f3;
+        padding: 0.75rem;
+        border-radius: 6px;
+        margin: 0.5rem 0;
+        font-size: 0.9rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -74,51 +84,32 @@ def safe_read_csv(file_path):
             continue
     raise UnicodeDecodeError("utf-8", b"", 0, 1, "Unable to decode file with common encodings.")
 
-def safe_convert_to_dataframe(data):
-    """Safely convert data to DataFrame, filtering out non-primitive types"""
-    if isinstance(data, pd.DataFrame):
-        return data
-    
-    if isinstance(data, dict):
-        # Filter out non-primitive types
-        filtered_data = {}
-        for key, value in data.items():
-            if isinstance(value, (str, int, float, bool, type(None))):
-                filtered_data[key] = value
-            elif isinstance(value, (list, tuple)):
-                # Convert list/tuple to string if it contains non-primitive types
-                try:
-                    # Try to create a small test DataFrame
-                    test_df = pd.DataFrame({key: value[:5] if len(value) > 5 else value})
-                    filtered_data[key] = value
-                except:
-                    filtered_data[key] = str(value)
-            else:
-                # Convert to string for non-primitive types
-                filtered_data[key] = str(value)
-        
-        try:
-            return pd.DataFrame([filtered_data])
-        except Exception as e:
-            st.error(f"Error converting dict to DataFrame: {str(e)}")
-            return pd.DataFrame()
-    
-    # For other types, try to convert to string
+def extract_llm_content(response):
+    """Trích xuất nội dung từ LLM response object"""
     try:
-        if hasattr(data, '__dict__'):
-            # Object with attributes
-            filtered_dict = {}
-            for key, value in data.__dict__.items():
-                if isinstance(value, (str, int, float, bool, type(None))):
-                    filtered_dict[key] = value
-                else:
-                    filtered_dict[key] = str(value)
-            return pd.DataFrame([filtered_dict])
+        # Nếu response có thuộc tính content
+        if hasattr(response, 'content'):
+            return response.content
+        
+        # Nếu response là string
+        elif isinstance(response, str):
+            return response
+        
+        # Nếu response có thuộc tính text
+        elif hasattr(response, 'text'):
+            return response.text
+        
+        # Nếu response có thuộc tính message và content
+        elif hasattr(response, 'message') and hasattr(response.message, 'content'):
+            return response.message.content
+        
+        # Fallback: convert to string
         else:
-            return pd.DataFrame([{'value': str(data)}])
+            return str(response)
+            
     except Exception as e:
-        st.error(f"Error converting data to DataFrame: {str(e)}")
-        return pd.DataFrame()
+        st.warning(f"Không thể trích xuất nội dung LLM: {str(e)}")
+        return "Không xác định được ý nghĩa"
 
 def analyze_column(col_name, series):
     """Enhanced column analysis with better error handling"""
@@ -182,8 +173,11 @@ def guess_column_semantic_llm(col_name, sample_values=None):
         prompt = f"Loại ngữ nghĩa của cột '{col_name}'{sample_text} là gì? Trả lời bằng 3-5 từ tiếng Việt mô tả ý nghĩa (ví dụ: 'ID khách hàng', 'Ngày sinh', 'Tên sản phẩm')."
         
         response = llm.invoke(prompt)
-        result = str(response) if hasattr(response, 'content') else str(response)
+        
+        # Sử dụng hàm extract_llm_content để lấy nội dung
+        result = extract_llm_content(response)
         return result.strip()
+        
     except Exception as e:
         return f"Không xác định ({str(e)[:50]}...)"
 
@@ -215,7 +209,7 @@ Hãy đề xuất kế hoạch làm sạch với các quy tắc sau:
 Trả về kế hoạch dưới dạng danh sách có cấu trúc rõ ràng với lý do.
 """
         response = llm.invoke(prompt)
-        return str(response) if hasattr(response, 'content') else str(response)
+        return extract_llm_content(response)
     except Exception as e:
         return f"Lỗi tạo đề xuất làm sạch: {str(e)}"
 
@@ -223,8 +217,7 @@ Trả về kế hoạch dưới dạng danh sách có cấu trúc rõ ràng vớ
 def refine_cleaning_strategy(user_input, _base_plan):
     """Refine cleaning strategy based on user input"""
     try:
-        # Convert base_plan to string if it's an AIMessage object
-        base_plan_text = str(_base_plan) if hasattr(_base_plan, 'content') else str(_base_plan)
+        base_plan_text = extract_llm_content(_base_plan)
         
         prompt = f"""
 Kế hoạch làm sạch hiện tại:
@@ -235,7 +228,7 @@ Người dùng muốn điều chỉnh: {user_input}
 Cập nhật kế hoạch làm sạch phù hợp với yêu cầu của người dùng. Giữ nguyên các phần tốt và chỉ thay đổi theo yêu cầu.
 """
         response = llm.invoke(prompt)
-        return str(response) if hasattr(response, 'content') else str(response)
+        return extract_llm_content(response)
     except Exception as e:
         return f"Lỗi cập nhật kế hoạch: {str(e)}"
 
@@ -243,8 +236,7 @@ Cập nhật kế hoạch làm sạch phù hợp với yêu cầu của người
 def generate_cleaning_code_from_plan(_plan):
     """Enhanced code generation with better error handling"""
     try:
-        # Convert plan to string if it's an AIMessage object
-        plan_text = str(_plan) if hasattr(_plan, 'content') else str(_plan)
+        plan_text = extract_llm_content(_plan)
         
         prompt = f"""
 Chuyển đổi kế hoạch làm sạch sau thành mã Python hợp lệ sử dụng pandas.
@@ -263,31 +255,9 @@ Kế hoạch Làm sạch:
 Trả về mã Python đầy đủ:
 """
         response = llm.invoke(prompt)
-        return str(response) if hasattr(response, 'content') else str(response)
+        return extract_llm_content(response)
     except Exception as e:
         return f"# Lỗi tạo mã: {str(e)}\nprint('Không thể tạo mã làm sạch')"
-
-def extract_valid_code(llm_response):
-    """Extract valid Python code from LLM response"""
-    try:
-        # Try to extract code between ```python and ```
-        match = re.search(r"```(?:python)?\n(.*?)```", llm_response.strip(), re.DOTALL)
-        if match:
-            return match.group(1)
-        
-        # If no code blocks, try to extract lines that look like Python code
-        lines = llm_response.splitlines()
-        code_lines = []
-        for line in lines:
-            stripped = line.strip()
-            if stripped and not stripped.startswith("#") and not stripped.startswith("Kế hoạch"):
-                # Basic check if it looks like Python code
-                if any(keyword in stripped for keyword in ['df[', 'df.', 'pd.', 'np.', '=', 'print(', 'try:', 'except:']):
-                    code_lines.append(line)
-        
-        return "\n".join(code_lines) if code_lines else llm_response
-    except Exception as e:
-        return f"# Error extracting code: {str(e)}\n{llm_response}"
 
 def generate_insight(info):
     """Generate insights for column analysis"""
@@ -362,6 +332,63 @@ def plot_distribution(col_name, series):
         
     except Exception as e:
         st.error(f"Lỗi vẽ biểu đồ cho {col_name}: {str(e)}")
+
+def perform_column_analysis(df, dataset_id):
+    """Thực hiện phân tích cột với progress bar"""
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    col_analyses = []
+    
+    for i, col in enumerate(df.columns):
+        status_text.text(f"Đang phân tích cột: {col}")
+        progress_bar.progress((i + 1) / len(df.columns))
+        
+        # Column analysis
+        stats = analyze_column(col, df[col])
+        
+        # Get sample values for semantic analysis
+        sample_vals = df[col].dropna().head(5).tolist()
+        semantic = guess_column_semantic_llm(col, sample_vals)
+        stats['semantic'] = semantic
+        
+        col_analyses.append(stats)
+        
+        time.sleep(0.1)  # Brief pause to show progress
+    
+    status_text.text("✅ Hoàn thành phân tích!")
+    progress_bar.progress(1.0)
+    
+    # Lưu kết quả phân tích vào database
+    save_dataset_analysis(dataset_id, col_analyses)
+    
+    time.sleep(0.5)
+    status_text.empty()
+    progress_bar.empty()
+    
+    return col_analyses
+
+def extract_valid_code(llm_response):
+    """Extract valid Python code from LLM response"""
+    try:
+        # Try to extract code between ```python and ```
+        match = re.search(r"```(?:python)?\n(.*?)```", llm_response.strip(), re.DOTALL)
+        if match:
+            return match.group(1)
+        
+        # If no code blocks, try to extract lines that look like Python code
+        lines = llm_response.splitlines()
+        code_lines = []
+        for line in lines:
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#") and not stripped.startswith("Kế hoạch"):
+                # Basic check if it looks like Python code
+                if any(keyword in stripped for keyword in ['df[', 'df.', 'pd.', 'np.', '=', 'print(', 'try:', 'except:']):
+                    code_lines.append(line)
+        
+        return "\n".join(code_lines) if code_lines else llm_response
+    except Exception as e:
+        return f"# Error extracting code: {str(e)}\n{llm_response}"
 
 def fix_numeric_strings(df):
     """Enhanced numeric string fixing"""
@@ -468,7 +495,7 @@ Trả lời bằng markdown với format đẹp và dễ hiểu.
 """
             
             response = llm.invoke(interpretation_prompt)
-            interpretation = str(response) if hasattr(response, 'content') else str(response)
+            interpretation = extract_llm_content(response)
             st.markdown("### 🤖 Phân tích AI")
             st.markdown(interpretation)
             
@@ -533,41 +560,57 @@ def main():
     with tab1:
         st.markdown("### 🔍 Phân tích Chi tiết từng Cột")
         
-        # Generate column analysis
-        if st.button("🚀 Bắt đầu Phân tích", type="primary"):
-            progress_bar = st.progress(0)
-            status_text = st.empty()
+        # Kiểm tra xem đã có phân tích cached không
+        cached_analysis = get_dataset_analysis(dataset_id)
+        
+        # Hiển thị thông tin cache
+        if cached_analysis:
+            is_outdated = is_analysis_outdated(cached_analysis, dataset[4])  # dataset[4] là upload_time
             
-            col_analyses = []
-            
-            for i, col in enumerate(df.columns):
-                status_text.text(f"Đang phân tích cột: {col}")
-                progress_bar.progress((i + 1) / len(df.columns))
-                
-                # Column analysis
-                stats = analyze_column(col, df[col])
-                
-                # Get sample values for semantic analysis
-                sample_vals = df[col].dropna().head(5).tolist()
-                semantic = guess_column_semantic_llm(col, sample_vals)
-                stats['semantic'] = semantic
-                
-                col_analyses.append(stats)
-                
-                time.sleep(0.1)  # Brief pause to show progress
-            
-            status_text.text("✅ Hoàn thành phân tích!")
-            progress_bar.progress(1.0)
-            
-            # Store in session state
-            st.session_state.col_analyses = col_analyses
-            
-            time.sleep(0.5)
-            status_text.empty()
-            progress_bar.empty()
+            if is_outdated:
+                st.markdown("""
+                <div class="cache-info">
+                    ⚠️ <strong>Phân tích cũ được tìm thấy</strong> - Dataset đã được cập nhật sau lần phân tích cuối. 
+                    Nên chạy phân tích lại để có kết quả chính xác nhất.
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div class="cache-info">
+                    ✅ <strong>Phân tích có sẵn</strong> - Đã phân tích lúc {cached_analysis['updated_at']}. 
+                    Bạn có thể sử dụng kết quả này hoặc chạy phân tích lại.
+                </div>
+                """, unsafe_allow_html=True)
+        
+        # Buttons cho việc phân tích
+        col_btn1, col_btn2, col_btn3 = st.columns(3)
+        
+        with col_btn1:
+            if cached_analysis and not is_analysis_outdated(cached_analysis, dataset[4]):
+                if st.button("📋 Sử dụng Phân tích Có sẵn", type="secondary"):
+                    st.session_state.col_analyses = cached_analysis['analysis']
+                    st.success("✅ Đã tải phân tích từ cache!")
+                    st.rerun()
+        
+        with col_btn2:
+            if st.button("🚀 Chạy Phân tích Mới", type="primary"):
+                with st.spinner("🔄 Đang phân tích dữ liệu..."):
+                    col_analyses = perform_column_analysis(df, dataset_id)
+                    st.session_state.col_analyses = col_analyses
+                    st.success("✅ Hoàn thành phân tích mới!")
+                    st.rerun()
+        
+        with col_btn3:
+            if cached_analysis:
+                if st.button("🗑️ Xóa Cache", type="secondary"):
+                    delete_dataset_analysis(dataset_id)
+                    st.success("🗑️ Đã xóa cache phân tích!")
+                    st.rerun()
         
         # Display analysis results
         if hasattr(st.session_state, 'col_analyses'):
+            st.markdown("---")
+            
             for analysis in st.session_state.col_analyses:
                 col_name = analysis['name']
                 
