@@ -1,0 +1,4 @@
+[server]
+[global]
+# Tắt warning development mode
+showWarningOnDirectExecution = false
