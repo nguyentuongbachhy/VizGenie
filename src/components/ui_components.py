@@ -16,7 +16,13 @@ PROFESSIONAL_CSS = """
     
     /* Header styles */
     .app-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    {"icon": "📂", "label": "Bảng Điều Khiển", "page": "pages/1_🧮_Bang_Dieu_Khien.py"},
+            {"icon": "📊", "label": "Chi Tiết Bộ Dữ Liệu", "page": "pages/3_📂_Chi_Tiet_Bo_Du_Lieu.py"},
+            {"icon": "📈", "label": "Biểu Đồ Thông Minh", "page": "pages/6_📈_Bieu_Do_Thong_Minh.py"},
+            {"icon": "📋", "label": "Lịch Sử Biểu Đồ", "page": "pages/4_📊_Lich_Su_Bieu_Do.py"},
+            {"icon": "🔗", "label": "Phân Tích Chéo", "page": "pages/7_🔗_Phan_Tich_Cheo_Du_Lieu.py"},
+            {"icon": "📄", "label": "Báo Cáo EDA", "page": "pages/5_📋_Bao_Cao_EDA.py"},
+            {"icon": "📖", "label": "Về Dự Án", "page": "pages/📖_Ve_Du_An.py"}und: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 2rem;
         border-radius: 15px;
         color: white;
@@ -465,14 +471,14 @@ def render_navigation_sidebar():
         
         # Navigation menu
         nav_items = [
-            {"icon": "📂", "label": "Dashboard", "page": "pages/1_🧮_Dashboard.py"},
-            {"icon": "💬", "label": "AI Chat", "page": "main.py"},
-            {"icon": "📊", "label": "Dataset Details", "page": "pages/3_📂_Dataset_Details.py"},
-            {"icon": "📈", "label": "Smart Charts", "page": "pages/6_📈_Smart_Charts.py"},
-            {"icon": "📋", "label": "Chart History", "page": "pages/4_📊_Charts_History.py"},
-            {"icon": "🔗", "label": "Cross Analysis", "page": "pages/7_🔗_Cross_Dataset_Analysis.py"},
-            {"icon": "📄", "label": "EDA Report", "page": "pages/5_📋_EDA Report.py"},
-            {"icon": "📖", "label": "About", "page": "pages/📖_About_Project.py"}
+            {"icon": "📂", "label": "Bảng Điều Khiển", "page": "pages/1_🧮_Bang_Dieu_Khien.py"},
+            {"icon": "💬", "label": "Chat AI", "page": "main.py"},
+            {"icon": "📊", "label": "Chi Tiết Bộ Dữ Liệu", "page": "pages/3_📂_Chi_Tiet_Bo_Du_Lieu.py"},
+            {"icon": "📈", "label": "Biểu Đồ Thông Minh", "page": "pages/6_📈_Bieu_Do_Thong_Minh.py"},
+            {"icon": "📋", "label": "Lịch Sử Biểu Đồ", "page": "pages/4_📊_Lich_Su_Bieu_Do.py"},
+            {"icon": "🔗", "label": "Phân Tích Chéo", "page": "pages/7_🔗_Phan_Tich_Cheo_Du_Lieu.py"},
+            {"icon": "📄", "label": "Báo Cáo EDA", "page": "pages/5_📋_Bao_Cao_EDA.py"},
+            {"icon": "📖", "label": "Về Dự Án", "page": "pages/📖_Ve_Du_An.py"}
         ]
         
         for item in nav_items:

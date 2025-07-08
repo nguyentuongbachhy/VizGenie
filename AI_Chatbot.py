@@ -19,8 +19,8 @@ from src.utils import (
     rename_chat_session
 )
 
-st.set_page_config(page_title="🧠 Delight-GPT", layout="wide")
-st.title("🧠 Delight-GPT")
+st.set_page_config(page_title="🧠 VizGenie-GPT", layout="wide")
+st.title("🧠 VizGenie-GPT")
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -99,18 +99,18 @@ def enhance_prompt(prompt: str, df: pd.DataFrame) -> str:
 # Load available datasets
 datasets = get_all_datasets()
 if not datasets:
-    st.warning("Please upload a dataset in the Dashboard page first.")
+    st.warning("Vui lòng tải lên bộ dữ liệu trong trang Bảng điều khiển trước.")
     st.stop()
 
 edited_prompt = st.session_state.pop("edited_prompt", None)
 dataset_options = {f"{d[0]} - {d[1]}": d[0] for d in datasets}
-selected = st.selectbox("Select dataset to analyze:", list(dataset_options.keys()))
+selected = st.selectbox("Chọn bộ dữ liệu để phân tích:", list(dataset_options.keys()))
 dataset_id = dataset_options[selected]
 dataset = get_dataset(dataset_id)
 file_path = dataset[2]
 num_rows, num_cols = dataset[3], dataset[4]
 
-st.markdown(f"**\U0001f4ca Dataset Info:** `{dataset[1]}` — {num_rows} rows × {num_cols} columns")
+st.markdown(f"**📊 Thông tin Bộ dữ liệu:** `{dataset[1]}` — {num_rows} hàng × {num_cols} cột")
 
 try:
     df = safe_read_csv(file_path)
@@ -119,32 +119,32 @@ except Exception as e:
     st.error(f"❌ Error loading CSV: {e}")
     st.stop()
 
-st.markdown("### 📬 Chat Sessions")
+st.markdown("### 📬 Phiên Chat")
 sessions = get_sessions_by_dataset(dataset_id)
 session_titles = {f"{s[0]} - {s[1]} ({s[2]})": s[0] for s in sessions}
-new_session_title = st.text_input("Start a new session (optional title):")
-use_existing = st.radio("Choose session:", ("Use existing", "Create new"))
+new_session_title = st.text_input("Bắt đầu phiên mới (tiêu đề tùy chọn):")
+use_existing = st.radio("Chọn phiên:", ("Sử dụng có sẵn", "Tạo mới"))
 
-if use_existing == "Use existing" and sessions:
-    session_display = st.selectbox("Select session:", list(session_titles.keys()))
+if use_existing == "Sử dụng có sẵn" and sessions:
+    session_display = st.selectbox("Chọn phiên:", list(session_titles.keys()))
     session_id = session_titles[session_display]
-    with st.expander("⚙️ Manage this session"):
-        new_name = st.text_input("Rename this session:")
-        if st.button("Rename") and new_name:
+    with st.expander("⚙️ Quản lý phiên này"):
+        new_name = st.text_input("Đổi tên phiên này:")
+        if st.button("Đổi tên") and new_name:
             rename_chat_session(session_id, new_name)
             st.rerun()
-        if st.button("❌ Delete this session"):
+        if st.button("❌ Xóa phiên này"):
             delete_chat_session(session_id)
-            st.success("Deleted session")
+            st.success("Đã xóa phiên")
             st.rerun()
-elif use_existing == "Create new" or not sessions:
-    default_title = new_session_title or "New Session"
+elif use_existing == "Tạo mới" or not sessions:
+    default_title = new_session_title or "Phiên Mới"
     session_id = create_chat_session(dataset_id, default_title)
-    st.success(f"✅ Created new session: {default_title}")
+    st.success(f"✅ Đã tạo phiên mới: {default_title}")
 
 chat_history = get_chat_messages(session_id)
 if chat_history:
-    st.markdown("### 🔈️ Conversation History")
+    st.markdown("### 🔈️ Lịch sử Cuộc trò chuyện")
     for idx, (msg_id, role, content, ts) in enumerate(chat_history):
         with st.chat_message(role):
             cols = st.columns([10, 1])
@@ -153,19 +153,19 @@ if chat_history:
             with cols[1]:
                 if role == "user":
                     with st.popover("⋮", use_container_width=True):
-                        if st.button("✏️ Edit", key=f"edit_{idx}"):
+                        if st.button("✏️ Sửa", key=f"edit_{idx}"):
                             st.session_state.edited_prompt = content
                             delete_chat_message(session_id, idx + 1)
                             delete_chat_message(session_id, idx + 2)
                             st.rerun()
-                        if st.button("🗑️ Delete", key=f"del_{msg_id}"):
+                        if st.button("🗑️ Xóa", key=f"del_{msg_id}"):
                             delete_chat_message(session_id, msg_id)
                             if idx + 1 < len(chat_history) and chat_history[idx + 1][1] == "assistant":
                                 delete_chat_message(session_id, chat_history[idx + 1][0])
                             st.rerun()
-                        st.button("📋 Copy", key=f"copy_{idx}")
+                        st.button("📋 Sao chép", key=f"copy_{idx}")
 
-prompt = st.session_state.pop("submitted_edited_prompt", None) or st.chat_input("Ask something about this dataset...")
+prompt = st.session_state.pop("submitted_edited_prompt", None) or st.chat_input("Hỏi gì đó về bộ dữ liệu này...")
 if prompt:
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -188,8 +188,8 @@ if prompt:
                 st.code(patched_code, language="python")
                 add_chart_card(dataset_id, prompt, response["output"], patched_code)
         except Exception as e:
-            st.error(f"❌ Failed: {e}")
+            st.error(f"❌ Thất bại: {e}")
 
 
 with st.sidebar:
-    st.page_link("pages/📖_About_Project.py", label="About Project", icon="📘")
+    st.page_link("pages/📖_Ve_Du_An.py", label="Về Dự Án", icon="📘")

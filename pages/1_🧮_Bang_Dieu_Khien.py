@@ -16,15 +16,15 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import numpy as np
 
-st.set_page_config(page_title="📂 Professional Dashboard", layout="wide", page_icon="📊")
+st.set_page_config(page_title="📂 Bảng điều khiển Chuyên nghiệp", layout="wide", page_icon="📊")
 
 # Apply professional styling
 st.markdown(PROFESSIONAL_CSS, unsafe_allow_html=True)
 
 # Professional header
 render_professional_header(
-    "Multi-Dataset Analytics Dashboard",
-    "Upload, manage, and discover relationships across your data with AI-powered insights",
+    "Bảng điều khiển Phân tích Đa Bộ dữ liệu",
+    "Tải lên, quản lý và khám phá mối quan hệ giữa dữ liệu của bạn với thông tin chi tiết được hỗ trợ bởi AI",
     "📊"
 )
 
@@ -36,18 +36,18 @@ if not os.path.exists('data/uploads'):
 with st.sidebar:
     st.markdown("""
     <div style="text-align: center; padding: 1rem 0; border-bottom: 1px solid #e1e5e9; margin-bottom: 1rem;">
-        <h3 style="color: #667eea; margin: 0;">📂 Dataset Manager</h3>
-        <small style="color: #666;">Upload & Organize</small>
+        <h3 style="color: #667eea; margin: 0;">📂 Quản lý Bộ dữ liệu</h3>
+        <small style="color: #666;">Tải lên & Tổ chức</small>
     </div>
     """, unsafe_allow_html=True)
     
     # Enhanced multi-file upload
-    st.markdown("#### 📤 Upload Datasets")
+    st.markdown("#### 📤 Tải lên Bộ dữ liệu")
     uploaded_files = st.file_uploader(
-        "Select CSV files (multiple supported)", 
+        "Chọn các file CSV (hỗ trợ nhiều file)", 
         type=["csv"], 
         accept_multiple_files=True,
-        help="💡 Upload multiple datasets to discover cross-data relationships"
+        help="💡 Tải lên nhiều bộ dữ liệu để khám phá mối quan hệ chéo dữ liệu"
     )
     
     # Upload progress and processing
@@ -57,7 +57,7 @@ with st.sidebar:
         
         for i, uploaded_file in enumerate(uploaded_files):
             if f"uploaded_{uploaded_file.name}" not in st.session_state:
-                upload_status.text(f"Processing {uploaded_file.name}...")
+                upload_status.text(f"Đang xử lý {uploaded_file.name}...")
                 upload_progress.progress((i + 1) / len(uploaded_files))
                 
                 now = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -75,7 +75,7 @@ with st.sidebar:
                 st.session_state[f"uploaded_{uploaded_file.name}"] = True
                 st.success(f"✅ {uploaded_file.name}")
         
-        upload_status.text("✅ All files uploaded successfully!")
+        upload_status.text("✅ Tất cả file đã được tải lên thành công!")
         upload_progress.progress(1.0)
         st.rerun()
 
@@ -84,7 +84,7 @@ datasets = get_all_datasets()
 
 if datasets:
     # Enhanced dashboard metrics with animations
-    st.markdown("### 📊 Dashboard Overview")
+    st.markdown("### 📊 Tổng quan Bảng điều khiển")
     
     total_datasets = len(datasets)
     total_rows = sum([d[2] for d in datasets])
@@ -97,21 +97,21 @@ if datasets:
     
     # Professional metric cards
     metrics = [
-        {"title": "Total Datasets", "value": f"{total_datasets}", "delta": "+3 this week"},
-        {"title": "Total Records", "value": f"{total_rows:,}", "delta": f"+{total_rows//10:,} recent"},
-        {"title": "Data Fields", "value": f"{total_cols}", "delta": None},
-        {"title": "Avg Dataset Size", "value": f"{avg_size:,.0f}", "delta": None}
+        {"title": "Tổng Bộ dữ liệu", "value": f"{total_datasets}", "delta": "+3 tuần này"},
+        {"title": "Tổng Bản ghi", "value": f"{total_rows:,}", "delta": f"+{total_rows//10:,} gần đây"},
+        {"title": "Trường Dữ liệu", "value": f"{total_cols}", "delta": None},
+        {"title": "Kích thước TB Bộ dữ liệu", "value": f"{avg_size:,.0f}", "delta": None}
     ]
     
     render_metric_cards(metrics)
     
     # Enhanced analytics dashboard
-    st.markdown("### 📈 Analytics Dashboard")
+    st.markdown("### 📈 Bảng điều khiển Phân tích")
     
     # Create comprehensive dashboard visualization
     fig = make_subplots(
         rows=2, cols=2,
-        subplot_titles=('Dataset Sizes (Records)', 'Upload Timeline', 'Column Distribution', 'Data Density Score'),
+        subplot_titles=('Kích thước Bộ dữ liệu (Bản ghi)', 'Dòng thời gian Tải lên', 'Phân phối Cột', 'Điểm Mật độ Dữ liệu'),
         specs=[[{"secondary_y": False}, {"secondary_y": False}],
                [{"secondary_y": False}, {"secondary_y": False}]]
     )
@@ -126,7 +126,7 @@ if datasets:
         go.Bar(
             x=dataset_names, 
             y=dataset_sizes, 
-            name="Records",
+            name="Bản ghi",
             marker=dict(color=colors[:len(datasets)], opacity=0.8),
             text=[f"{size:,}" for size in dataset_sizes],
             textposition="outside"
@@ -152,7 +152,7 @@ if datasets:
             x=sorted_dates, 
             y=cumulative_counts,
             mode='lines+markers', 
-            name="Cumulative Uploads",
+            name="Tải lên Tích lũy",
             line=dict(color='#764ba2', width=3),
             marker=dict(size=8, color='#667eea')
         ),
@@ -164,7 +164,7 @@ if datasets:
     fig.add_trace(
         go.Histogram(
             x=column_counts, 
-            name="Columns",
+            name="Cột",
             marker=dict(color='#56CCF2', opacity=0.8),
             nbinsx=10
         ),
@@ -178,16 +178,16 @@ if datasets:
             x=dataset_names, 
             y=density_scores, 
             mode='markers',
-            name="Density Score",
+            name="Điểm Mật độ",
             marker=dict(
                 size=[min(50, max(10, size//1000)) for size in dataset_sizes],
                 color=density_scores,
                 colorscale='Viridis',
                 showscale=True,
-                colorbar=dict(title="Density Score")
+                colorbar=dict(title="Điểm Mật độ")
             ),
-            text=[f"{d[1]}<br>Density: {score:.1f}" for d, score in zip(datasets, density_scores)],
-            hovertemplate="<b>%{text}</b><br>Records/Column: %{y:.1f}<extra></extra>"
+            text=[f"{d[1]}<br>Mật độ: {score:.1f}" for d, score in zip(datasets, density_scores)],
+            hovertemplate="<b>%{text}</b><br>Bản ghi/Cột: %{y:.1f}<extra></extra>"
         ),
         row=2, col=2
     )
@@ -197,7 +197,7 @@ if datasets:
         height=600,
         showlegend=False,
         title=dict(
-            text="📊 Dataset Analytics Overview",
+            text="📊 Tổng quan Phân tích Bộ dữ liệu",
             x=0.5,
             font=dict(size=18, color='#2c3e50')
         ),
@@ -225,78 +225,78 @@ if datasets:
     st.plotly_chart(fig, use_container_width=True)
     
     # Dataset insights with AI analysis
-    st.markdown("### 🤖 AI-Powered Insights")
+    st.markdown("### 🤖 Thông tin được Hỗ trợ bởi AI")
     
     # Generate insights about the dataset collection
     insights = []
     
     if total_datasets >= 3:
-        insights.append("🎯 **Multi-Dataset Analysis Ready**: You have enough datasets for comprehensive cross-analysis")
+        insights.append("🎯 **Sẵn sàng Phân tích Đa Bộ dữ liệu**: Bạn có đủ bộ dữ liệu cho phân tích chéo toàn diện")
     
     if max(dataset_sizes) > 10000:
-        insights.append(f"📈 **Large Dataset Detected**: {largest_dataset[1]} has {largest_dataset[2]:,} records - suitable for deep analytics")
+        insights.append(f"📈 **Phát hiện Bộ dữ liệu Lớn**: {largest_dataset[1]} có {largest_dataset[2]:,} bản ghi - phù hợp cho phân tích sâu")
     
     if len(set(d[3] for d in datasets)) > 3:
-        insights.append("🔗 **Diverse Data Structure**: Varied column counts suggest different data types - good for comprehensive analysis")
+        insights.append("🔗 **Cấu trúc Dữ liệu Đa dạng**: Số lượng cột khác nhau cho thấy các loại dữ liệu khác nhau - tốt cho phân tích toàn diện")
     
     upload_recency = (datetime.now() - datetime.strptime(newest_dataset[4], "%Y-%m-%d %H:%M:%S")).days
     if upload_recency < 7:
-        insights.append(f"⚡ **Fresh Data**: Latest upload ({newest_dataset[1]}) is only {upload_recency} days old")
+        insights.append(f"⚡ **Dữ liệu Mới**: Tải lên mới nhất ({newest_dataset[1]}) chỉ cách đây {upload_recency} ngày")
     
     # Display insights in cards
     if insights:
         for insight in insights:
             render_insight_card(insight)
     else:
-        render_insight_card("📊 **Getting Started**: Upload more datasets to unlock advanced AI insights and cross-data analysis!")
+        render_insight_card("📊 **Bắt đầu**: Tải lên thêm bộ dữ liệu để mở khóa thông tin AI nâng cao và phân tích chéo dữ liệu!")
     
     # Multi-dataset relationship analysis
-    st.markdown("### 🔗 Cross-Dataset Analysis")
+    st.markdown("### 🔗 Phân tích Chéo Bộ dữ liệu")
     
     col1, col2 = st.columns([2, 1])
     
     with col1:
         selected_datasets = st.multiselect(
-            "🎯 Select datasets for relationship analysis:",
+            "🎯 Chọn bộ dữ liệu để phân tích mối quan hệ:",
             options=[f"{d[0]} - {d[1]}" for d in datasets],
-            help="Choose 2+ datasets to discover hidden relationships and patterns",
-            placeholder="Select multiple datasets..."
+            help="Chọn 2+ bộ dữ liệu để khám phá mối quan hệ và mô hình ẩn",
+            placeholder="Chọn nhiều bộ dữ liệu..."
         )
     
     with col2:
         analysis_type = st.selectbox(
-            "Analysis Type:",
-            ["Column Similarity", "Statistical Correlation", "Semantic Relationships", "AI Deep Analysis"]
+            "Loại Phân tích:",
+            ["Tương đồng Cột", "Tương quan Thống kê", "Mối quan hệ Ngữ nghĩa", "Phân tích Sâu AI"]
         )
     
     if len(selected_datasets) >= 2:
-        if st.button("🚀 Analyze Relationships", type="primary", use_container_width=True):
-            with st.spinner("🤖 Analyzing cross-dataset relationships..."):
-                render_animated_loading("Discovering patterns across your datasets...")
+        if st.button("🚀 Phân tích Mối quan hệ", type="primary", use_container_width=True):
+            with st.spinner("🤖 Đang phân tích mối quan hệ chéo bộ dữ liệu..."):
+                render_animated_loading("Đang khám phá mô hình qua các bộ dữ liệu của bạn...")
                 
                 # Store selection for cross-analysis page
                 st.session_state.cross_analysis_datasets = selected_datasets
                 st.session_state.cross_analysis_type = analysis_type
                 
-                st.success("✅ Analysis ready! Click below to view detailed results.")
+                st.success("✅ Phân tích sẵn sàng! Nhấp bên dưới để xem kết quả chi tiết.")
                 
-                if st.button("📊 View Detailed Analysis", type="secondary"):
-                    st.switch_page("pages/7_🔗_Cross_Dataset_Analysis.py")
+                if st.button("📊 Xem Phân tích Chi tiết", type="secondary"):
+                    st.switch_page("pages/7_🔗_Phan_Tich_Cheo_Du_Lieu.py")
     
     # Enhanced dataset management with professional cards
-    st.markdown("### 🗂️ Dataset Management")
+    st.markdown("### 🗂️ Quản lý Bộ dữ liệu")
     
     # Filter and search options
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        search_term = st.text_input("🔍 Search datasets:", placeholder="Filter by name...")
+        search_term = st.text_input("🔍 Tìm kiếm bộ dữ liệu:", placeholder="Lọc theo tên...")
     
     with col2:
-        size_filter = st.selectbox("📏 Size filter:", ["All", "Small (<1K)", "Medium (1K-10K)", "Large (>10K)"])
+        size_filter = st.selectbox("📏 Lọc kích thước:", ["Tất cả", "Nhỏ (<1K)", "Trung bình (1K-10K)", "Lớn (>10K)"])
     
     with col3:
-        sort_by = st.selectbox("📊 Sort by:", ["Name", "Upload Date", "Size", "Columns"])
+        sort_by = st.selectbox("📊 Sắp xếp theo:", ["Tên", "Ngày Tải lên", "Kích thước", "Cột"])
     
     # Apply filters
     filtered_datasets = datasets
@@ -304,22 +304,22 @@ if datasets:
     if search_term:
         filtered_datasets = [d for d in filtered_datasets if search_term.lower() in d[1].lower()]
     
-    if size_filter != "All":
-        if size_filter == "Small (<1K)":
+    if size_filter != "Tất cả":
+        if size_filter == "Nhỏ (<1K)":
             filtered_datasets = [d for d in filtered_datasets if d[2] < 1000]
-        elif size_filter == "Medium (1K-10K)":
+        elif size_filter == "Trung bình (1K-10K)":
             filtered_datasets = [d for d in filtered_datasets if 1000 <= d[2] <= 10000]
-        elif size_filter == "Large (>10K)":
+        elif size_filter == "Lớn (>10K)":
             filtered_datasets = [d for d in filtered_datasets if d[2] > 10000]
     
     # Sort datasets
-    if sort_by == "Name":
+    if sort_by == "Tên":
         filtered_datasets.sort(key=lambda x: x[1])
-    elif sort_by == "Upload Date":
+    elif sort_by == "Ngày Tải lên":
         filtered_datasets.sort(key=lambda x: datetime.strptime(x[4], "%Y-%m-%d %H:%M:%S"), reverse=True)
-    elif sort_by == "Size":
+    elif sort_by == "Kích thước":
         filtered_datasets.sort(key=lambda x: x[2], reverse=True)
-    elif sort_by == "Columns":
+    elif sort_by == "Cột":
         filtered_datasets.sort(key=lambda x: x[3], reverse=True)
     
     # Display filtered datasets with enhanced cards
@@ -337,7 +337,7 @@ if datasets:
                 col1, col2 = st.columns([2, 1])
                 
                 with col1:
-                    st.markdown("#### 📊 Dataset Preview")
+                    st.markdown("#### 📊 Xem trước Bộ dữ liệu")
                     st.dataframe(preview_df.head(5), use_container_width=True)
                     
                     # Quick statistics
@@ -349,69 +349,69 @@ if datasets:
                     quality_score = create_data_quality_indicator(preview_df)
                     
                 with col2:
-                    st.markdown("#### 🎯 Quick Stats")
+                    st.markdown("#### 🎯 Thống kê Nhanh")
                     
                     # Mini metrics for this dataset
                     dataset_metrics = [
-                        {"title": "Numeric Cols", "value": str(len(numeric_cols))},
-                        {"title": "Text Cols", "value": str(len(categorical_cols))},
-                        {"title": "Missing", "value": str(missing_values)},
-                        {"title": "Quality", "value": f"{quality_score:.0%}"}
+                        {"title": "Cột Số", "value": str(len(numeric_cols))},
+                        {"title": "Cột Văn bản", "value": str(len(categorical_cols))},
+                        {"title": "Thiếu", "value": str(missing_values)},
+                        {"title": "Chất lượng", "value": f"{quality_score:.0%}"}
                     ]
                     
                     render_metric_cards(dataset_metrics)
                     
                     # Action buttons
-                    st.markdown("#### ⚡ Quick Actions")
+                    st.markdown("#### ⚡ Hành động Nhanh")
                     
                     action_col1, action_col2 = st.columns(2)
                     
                     with action_col1:
-                        if st.button("🔍 Analyze", key=f"analyze_{id_}", use_container_width=True):
+                        if st.button("🔍 Phân tích", key=f"analyze_{id_}", use_container_width=True):
                             st.session_state.selected_dataset_id = id_
-                            st.switch_page("pages/3_📂_Dataset_Details.py")
+                            st.switch_page("pages/3_📂_Chi_Tiet_Bo_Du_Lieu.py")
                         
-                        if st.button("💬 Chat", key=f"chat_{id_}", use_container_width=True):
+                        if st.button("💬 Trò chuyện", key=f"chat_{id_}", use_container_width=True):
                             st.session_state.selected_dataset_id = id_
                             st.switch_page("main.py")
                     
                     with action_col2:
-                        if st.button("📊 Charts", key=f"chart_{id_}", use_container_width=True):
+                        if st.button("📊 Biểu đồ", key=f"chart_{id_}", use_container_width=True):
                             st.session_state.selected_dataset_id = id_
-                            st.switch_page("pages/6_📈_Smart_Charts.py")
+                            st.switch_page("pages/6_📈_Bieu_Do_Thong_Minh.py")
                         
-                        if st.button("📋 Report", key=f"report_{id_}", use_container_width=True):
+                        if st.button("📋 Báo cáo", key=f"report_{id_}", use_container_width=True):
                             st.session_state.selected_dataset_id = id_
-                            st.switch_page("pages/5_📋_EDA Report.py")
+                            st.switch_page("pages/5_📋_Bao_Cao_EDA.py")
                 
                 # AI recommendations for this specific dataset
-                st.markdown("#### 🤖 AI Recommendations")
+                st.markdown("#### 🤖 Khuyến nghị AI")
                 create_ai_recommendation_panel(preview_df)
                 
                 # Management options
-                st.markdown("#### ⚙️ Management Options")
+                st.markdown("#### ⚙️ Tùy chọn Quản lý")
                 
                 mgmt_col1, mgmt_col2, mgmt_col3 = st.columns(3)
                 
                 with mgmt_col1:
                     new_name = st.text_input(
-                        "Rename dataset:", 
+                        "Đổi tên bộ dữ liệu:", 
                         value=name, 
                         key=f"rename_input_{id_}",
-                        help="Give your dataset a descriptive name"
+                        help="Đặt tên mô tả cho bộ dữ liệu của bạn"
                     )
                     
-                    if st.button("✅ Rename", key=f"rename_btn_{id_}"):
+                    if st.button("✅ Đổi tên", key=f"rename_btn_{id_}"):
                         rename_dataset(id_, new_name)
-                        st.success("✅ Dataset renamed!")
+                        st.success("✅ Đã đổi tên bộ dữ liệu!")
                         st.rerun()
                 
                 with mgmt_col2:
-                    if st.button("📥 Download", key=f"download_{id_}", help="Download processed dataset"):
+                    if st.button("📥 Tải xuống", key=f"download_{id_}", help="Tải xuống bộ dữ liệu đã xử lý"):
                         # Create download functionality
                         csv_data = preview_df.to_csv(index=False)
                         st.download_button(
-                            label="📥 Download CSV",
+                            label="📥 Tải xuống CSV",
                             data=csv_data,
                             file_name=f"{name.split('_', 1)[-1] if '_' in name else name}",
                             mime="text/csv",
@@ -419,88 +419,88 @@ if datasets:
                         )
                 
                 with mgmt_col3:
-                    if st.button("🗑️ Delete", key=f"del_{id_}", type="secondary", help="Permanently delete this dataset"):
+                    if st.button("🗑️ Xóa", key=f"del_{id_}", type="secondary", help="Xóa vĩnh viễn bộ dữ liệu này"):
                         # Confirmation dialog
-                        if st.checkbox(f"Confirm deletion of {name}", key=f"confirm_{id_}"):
+                        if st.checkbox(f"Xác nhận xóa {name}", key=f"confirm_{id_}"):
                             delete_dataset(id_)
-                            st.warning(f"🗑️ Deleted dataset: {name}")
+                            st.warning(f"🗑️ Đã xóa bộ dữ liệu: {name}")
                             st.rerun()
                 
                 # Interactive data explorer for this dataset
-                if st.checkbox("🔍 Open Data Explorer", key=f"explorer_{id_}"):
+                if st.checkbox("🔍 Mở Khám phá Dữ liệu", key=f"explorer_{id_}"):
                     render_interactive_data_explorer(preview_df)
                 
             except Exception as e:
-                st.error(f"❌ Could not load dataset: {e}")
+                st.error(f"❌ Không thể tải bộ dữ liệu: {e}")
                 
                 # Still show management options even if preview fails
                 mgmt_col1, mgmt_col2 = st.columns(2)
                 
                 with mgmt_col1:
-                    new_name = st.text_input("Rename:", value=name, key=f"rename_error_{id_}")
-                    if st.button("✅ Rename", key=f"rename_error_btn_{id_}"):
+                    new_name = st.text_input("Đổi tên:", value=name, key=f"rename_error_{id_}")
+                    if st.button("✅ Đổi tên", key=f"rename_error_btn_{id_}"):
                         rename_dataset(id_, new_name)
                         st.rerun()
                 
                 with mgmt_col2:
-                    if st.button("🗑️ Delete", key=f"del_error_{id_}", type="secondary"):
+                    if st.button("🗑️ Xóa", key=f"del_error_{id_}", type="secondary"):
                         delete_dataset(id_)
                         st.rerun()
 
 else:
     # Welcome screen for new users
-    st.markdown("### 👋 Welcome to VizGenie-GPT Professional!")
+    st.markdown("### 👋 Chào mừng đến với VizGenie-GPT Chuyên nghiệp!")
     
     # Feature showcase
     col1, col2, col3 = st.columns(3)
     
     with col1:
         render_feature_card(
-            "🤖 AI-Powered Analysis",
-            "Ask complex questions about your data in natural language and get intelligent insights with beautiful visualizations.",
+            "🤖 Phân tích được Hỗ trợ bởi AI",
+            "Đặt câu hỏi phức tạp về dữ liệu của bạn bằng ngôn ngữ tự nhiên và nhận được thông tin thông minh với trực quan hóa đẹp mắt.",
             "🤖"
         )
     
     with col2:
         render_feature_card(
-            "🔗 Cross-Dataset Discovery",
-            "Upload multiple datasets and discover hidden relationships and patterns across your data sources.",
+            "🔗 Khám phá Chéo Bộ dữ liệu",
+            "Tải lên nhiều bộ dữ liệu và khám phá mối quan hệ ẩn và mô hình qua các nguồn dữ liệu của bạn.",
             "🔗"
         )
     
     with col3:
         render_feature_card(
-            "📊 Professional Charts",
-            "Generate stunning, publication-ready charts with smart color schemes and interactive features.",
+            "📊 Biểu đồ Chuyên nghiệp",
+            "Tạo ra những biểu đồ tuyệt đẹp, sẵn sàng xuất bản với bảng màu thông minh và tính năng tương tác.",
             "📊"
         )
     
     # Getting started guide
-    st.markdown("### 🚀 Getting Started")
+    st.markdown("### 🚀 Bắt đầu")
     
     render_insight_card("""
-    **📋 Quick Start Guide:**
+    **📋 Hướng dẫn Nhanh:**
     
-    1. **📤 Upload Your Data**: Use the sidebar to upload one or more CSV files
-    2. **🤖 Ask Questions**: Chat with your data using natural language
-    3. **📊 Create Visualizations**: Generate professional charts automatically
-    4. **🔗 Find Relationships**: Discover patterns across multiple datasets
-    5. **📄 Export Reports**: Generate comprehensive PDF reports for stakeholders
+    1. **📤 Tải lên Dữ liệu**: Sử dụng thanh bên để tải lên một hoặc nhiều file CSV
+    2. **🤖 Đặt Câu hỏi**: Trò chuyện với dữ liệu của bạn bằng ngôn ngữ tự nhiên
+    3. **📊 Tạo Trực quan hóa**: Tạo biểu đồ chuyên nghiệp tự động
+    4. **🔗 Tìm Mối quan hệ**: Khám phá mô hình qua nhiều bộ dữ liệu
+    5. **📄 Xuất Báo cáo**: Tạo báo cáo PDF toàn diện cho các bên liên quan
     
-    **💡 Pro Tips:**
-    - Upload related datasets together for better cross-analysis
-    - Use descriptive names for your datasets
-    - Ask specific questions for better AI responses
-    - Try different chart types and color schemes
+    **💡 Mẹo Chuyên nghiệp:**
+    - Tải lên các bộ dữ liệu liên quan cùng nhau để phân tích chéo tốt hơn
+    - Sử dụng tên mô tả cho bộ dữ liệu của bạn
+    - Đặt câu hỏi cụ thể để có phản hồi AI tốt hơn
+    - Thử các loại biểu đồ và bảng màu khác nhau
     """)
     
     # Sample data offer
-    st.markdown("### 📚 Try with Sample Data")
+    st.markdown("### 📚 Thử với Dữ liệu Mẫu")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("📊 Load Sample Sales Data", type="primary", use_container_width=True):
+        if st.button("📊 Tải Dữ liệu Bán hàng Mẫu", type="primary", use_container_width=True):
             # Create sample sales dataset
             np.random.seed(42)
             sample_sales = pd.DataFrame({
@@ -519,11 +519,11 @@ else:
             upload_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             add_dataset('sample_sales_data.csv', sample_path, len(sample_sales), len(sample_sales.columns), upload_time)
             
-            st.success("✅ Sample sales data loaded!")
+            st.success("✅ Đã tải dữ liệu bán hàng mẫu!")
             st.rerun()
     
     with col2:
-        if st.button("👥 Load Sample Customer Data", type="secondary", use_container_width=True):
+        if st.button("👥 Tải Dữ liệu Khách hàng Mẫu", type="secondary", use_container_width=True):
             # Create sample customer dataset
             np.random.seed(24)
             sample_customers = pd.DataFrame({
@@ -543,37 +543,37 @@ else:
             upload_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             add_dataset('sample_customer_data.csv', sample_path, len(sample_customers), len(sample_customers.columns), upload_time)
             
-            st.success("✅ Sample customer data loaded!")
+            st.success("✅ Đã tải dữ liệu khách hàng mẫu!")
             st.rerun()
 
 # Enhanced sidebar with navigation and tips
 with st.sidebar:
     if datasets:
         st.markdown("---")
-        st.markdown("### 🎯 Quick Stats")
+        st.markdown("### 🎯 Thống kê Nhanh")
         
         # Overall statistics
         total_size_mb = sum(os.path.getsize(os.path.join("data", "uploads", d[1])) for d in datasets if os.path.exists(os.path.join("data", "uploads", d[1]))) / (1024 * 1024)
         
         quick_stats = [
-            {"title": "Datasets", "value": str(len(datasets)), "delta": None},
-            {"title": "Total Size", "value": f"{total_size_mb:.1f}MB", "delta": None},
-            {"title": "Largest", "value": f"{max(d[2] for d in datasets):,}", "delta": None}
+            {"title": "Bộ dữ liệu", "value": str(len(datasets)), "delta": None},
+            {"title": "Tổng Kích thước", "value": f"{total_size_mb:.1f}MB", "delta": None},
+            {"title": "Lớn nhất", "value": f"{max(d[2] for d in datasets):,}", "delta": None}
         ]
         
         render_metric_cards(quick_stats)
     
     st.markdown("---")
-    st.markdown("### 🔗 Navigation")
+    st.markdown("### 🔗 Điều hướng")
     
     nav_links = [
-        ("💬 AI Chat", "main.py"),
-        ("📊 Dataset Details", "pages/3_📂_Dataset_Details.py"),
-        ("📈 Smart Charts", "pages/6_📈_Smart_Charts.py"),
-        ("🔗 Cross Analysis", "pages/7_🔗_Cross_Dataset_Analysis.py"),
-        ("📋 Chart History", "pages/4_📊_Charts_History.py"),
-        ("📄 EDA Report", "pages/5_📋_EDA Report.py"),
-        ("📖 About", "pages/📖_About_Project.py")
+        ("💬 Trò chuyện AI", "main.py"),
+        ("📊 Chi tiết Bộ dữ liệu", "pages/3_📂_Chi_Tiet_Bo_Du_Lieu.py"),
+        ("📈 Biểu đồ Thông minh", "pages/6_📈_Bieu_Do_Thong_Minh.py"),
+        ("🔗 Phân tích Chéo", "pages/7_🔗_Phan_Tich_Cheo_Du_Lieu.py"),
+        ("📋 Lịch sử Biểu đồ", "pages/4_📊_Lich_Su_Bieu_Do.py"),
+        ("📄 Báo cáo EDA", "pages/5_📋_Bao_Cao_EDA.py"),
+        ("📖 Về dự án", "pages/📖_Ve_Du_An.py")
     ]
     
     for label, page in nav_links:
@@ -581,14 +581,14 @@ with st.sidebar:
             st.switch_page(page)
     
     st.markdown("---")
-    st.markdown("### 💡 Tips & Tricks")
+    st.markdown("### 💡 Mẹo & Thủ thuật")
     
     tips = [
-        "🎯 **Better Analysis**: Upload related datasets together",
-        "🎨 **Visual Appeal**: Try different color schemes in charts", 
-        "🤖 **Smart Questions**: Be specific about what you want to explore",
-        "📊 **Cross-Analysis**: Look for patterns across datasets",
-        "📋 **Save Work**: Use chart history and session management"
+        "🎯 **Phân tích Tốt hơn**: Tải lên các bộ dữ liệu liên quan cùng nhau",
+        "🎨 **Hấp dẫn Trực quan**: Thử các bảng màu khác nhau trong biểu đồ", 
+        "🤖 **Câu hỏi Thông minh**: Cụ thể về những gì bạn muốn khám phá",
+        "📊 **Phân tích Chéo**: Tìm kiếm mô hình qua các bộ dữ liệu",
+        "📋 **Lưu Công việc**: Sử dụng lịch sử biểu đồ và quản lý phiên"
     ]
     
     for tip in tips:
@@ -599,17 +599,17 @@ st.markdown("---")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown("**🧠 VizGenie-GPT Professional**")
-    st.caption("Advanced Multi-Dataset Analytics Platform")
+    st.markdown("**🧠 VizGenie-GPT Chuyên nghiệp**")
+    st.caption("Nền tảng Phân tích Đa Bộ dữ liệu Nâng cao")
 
 with col2:
     if datasets:
-        st.markdown(f"**📊 System Status**")
-        st.caption(f"{len(datasets)} datasets • {sum(d[2] for d in datasets):,} total records")
+        st.markdown(f"**📊 Trạng thái Hệ thống**")
+        st.caption(f"{len(datasets)} bộ dữ liệu • {sum(d[2] for d in datasets):,} tổng bản ghi")
     else:
-        st.markdown("**🚀 Ready to Start**")
-        st.caption("Upload your first dataset to begin")
+        st.markdown("**🚀 Sẵn sàng Bắt đầu**")
+        st.caption("Tải lên bộ dữ liệu đầu tiên để bắt đầu")
 
 with col3:
     st.markdown("**👨‍💻 Delay Group**")
-    st.caption("Making data analysis accessible to everyone")
+    st.caption("Làm cho phân tích dữ liệu có thể tiếp cận với mọi người")

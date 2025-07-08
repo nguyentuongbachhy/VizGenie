@@ -29,7 +29,7 @@ warnings.filterwarnings('ignore')
 
 # Configure page with professional styling
 st.set_page_config(
-    page_title="VizGenie-GPT Professional", 
+    page_title="VizGenie-GPT Chuyên nghiệp", 
     layout="wide", 
     page_icon="🧠",
     initial_sidebar_state="expanded"
@@ -40,8 +40,8 @@ st.markdown(PROFESSIONAL_CSS, unsafe_allow_html=True)
 
 # Professional header with animation
 render_professional_header(
-    "VizGenie-GPT Professional Analytics",
-    "Advanced AI-powered data analysis with intelligent insights and beautiful visualizations",
+    "VizGenie-GPT Phân tích Chuyên nghiệp",
+    "Phân tích dữ liệu tiên tiến được hỗ trợ bởi AI với thông tin thông minh và trực quan hóa đẹp mắt",
     "🧠"
 )
 
@@ -50,7 +50,7 @@ load_dotenv()
 init_db()
 
 def generate_comprehensive_data_story(df: pd.DataFrame, chat_history: list, dataset_name: str) -> str:
-    """Generate a comprehensive data story with business insights"""
+    """Tạo một câu chuyện dữ liệu toàn diện với thông tin kinh doanh"""
     llm = load_llm("gpt-3.5-turbo")
     
     # Extract conversation patterns
@@ -61,93 +61,93 @@ def generate_comprehensive_data_story(df: pd.DataFrame, chat_history: list, data
     categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
     
     prompt = f"""
-    You are a senior data analyst creating an executive summary for dataset '{dataset_name}'.
+    Bạn là một nhà phân tích dữ liệu cấp cao đang tạo một tóm tắt điều hành cho bộ dữ liệu '{dataset_name}'.
     
-    📊 DATASET OVERVIEW:
-    - Shape: {df.shape[0]:,} rows × {df.shape[1]} columns
-    - Numeric variables: {len(numeric_cols)} ({', '.join(numeric_cols[:5])})
-    - Categorical variables: {len(categorical_cols)} ({', '.join(categorical_cols[:5])})
-    - Missing data: {df.isnull().sum().sum():,} cells ({(df.isnull().sum().sum()/(df.shape[0]*df.shape[1])*100):.1f}%)
+    📊 TỔNG QUAN BỘ DỮ LIỆU:
+    - Kích thước: {df.shape[0]:,} hàng × {df.shape[1]} cột
+    - Biến số: {len(numeric_cols)} ({', '.join(numeric_cols[:5])})
+    - Biến phân loại: {len(categorical_cols)} ({', '.join(categorical_cols[:5])})
+    - Dữ liệu thiếu: {df.isnull().sum().sum():,} ô ({(df.isnull().sum().sum()/(df.shape[0]*df.shape[1])*100):.1f}%)
     
-    🔍 RECENT ANALYSIS QUESTIONS:
+    🔍 CÁC CÂU HỎI PHÂN TÍCH GẦN ĐÂY:
     {questions}
     
-    Create a compelling executive summary with:
+    Tạo một tóm tắt điều hành hấp dẫn với:
     
-    ## 📈 Executive Summary
-    [2-3 sentences highlighting the most important findings]
+    ## 📈 Tóm tắt Điều hành
+    [2-3 câu làm nổi bật những phát hiện quan trọng nhất]
     
-    ## 🎯 Key Insights
-    [4-5 specific, actionable insights with numbers where possible]
+    ## 🎯 Thông tin Chính
+    [4-5 thông tin cụ thể, có thể hành động với số liệu khi có thể]
     
-    ## 📊 Data Quality Assessment  
-    [Brief assessment of data reliability and completeness]
+    ## 📊 Đánh giá Chất lượng Dữ liệu  
+    [Đánh giá ngắn gọn về độ tin cậy và tính đầy đủ của dữ liệu]
     
-    ## 💼 Business Implications
-    [How these insights can drive business decisions]
+    ## 💼 Tác động Kinh doanh
+    [Những thông tin này có thể thúc đẩy quyết định kinh doanh như thế nào]
     
-    ## 🚀 Recommended Next Steps
-    [3-4 specific actions to take based on the analysis]
+    ## 🚀 Các Bước Tiếp theo Được Khuyến nghị
+    [3-4 hành động cụ thể cần thực hiện dựa trên phân tích]
     
-    ## ⚠️ Limitations & Considerations
-    [Important caveats about the data or analysis]
+    ## ⚠️ Hạn chế & Cân nhắc
+    [Những lưu ý quan trọng về dữ liệu hoặc phân tích]
     
-    Make it executive-ready: professional, concise, and focused on actionable insights.
-    Use specific numbers and percentages where possible.
+    Làm cho nó sẵn sàng cho điều hành: chuyên nghiệp, súc tích và tập trung vào những thông tin có thể hành động.
+    Sử dụng số cụ thể và tỷ lệ phần trăm khi có thể.
     """
     
     return llm.invoke(prompt)
 
 def extract_enhanced_chart_insights(code: str, df: pd.DataFrame) -> str:
-    """Extract detailed insights about the generated chart"""
+    """Trích xuất thông tin chi tiết về biểu đồ được tạo"""
     llm = load_llm("gpt-3.5-turbo")
     
     # Identify chart type from code
-    chart_type = "Unknown"
+    chart_type = "Không xác định"
     if "scatter" in code.lower():
-        chart_type = "Scatter Plot"
+        chart_type = "Biểu đồ Phân tán"
     elif "bar" in code.lower():
-        chart_type = "Bar Chart" 
+        chart_type = "Biểu đồ Cột" 
     elif "hist" in code.lower():
-        chart_type = "Histogram"
+        chart_type = "Biểu đồ Tần suất"
     elif "box" in code.lower():
-        chart_type = "Box Plot"
+        chart_type = "Biểu đồ Hộp"
     elif "line" in code.lower():
-        chart_type = "Line Plot"
+        chart_type = "Biểu đồ Đường"
     elif "heatmap" in code.lower():
-        chart_type = "Heatmap"
+        chart_type = "Bản đồ Nhiệt"
     
     prompt = f"""
-    Analyze this {chart_type} generated from the following code:
+    Phân tích {chart_type} này được tạo từ đoạn code sau:
     
     ```python
     {code}
     ```
     
-    Dataset characteristics:
-    - Shape: {df.shape}
-    - Columns: {list(df.columns)}
-    - Data types: {df.dtypes.to_dict()}
+    Đặc điểm bộ dữ liệu:
+    - Kích thước: {df.shape}
+    - Cột: {list(df.columns)}
+    - Kiểu dữ liệu: {df.dtypes.to_dict()}
     
-    Provide detailed insights in this format:
+    Cung cấp thông tin chi tiết theo định dạng này:
     
-    ## 📊 Chart Analysis
-    [What this chart shows and why it's useful]
+    ## 📊 Phân tích Biểu đồ
+    [Biểu đồ này hiển thị gì và tại sao nó hữu ích]
     
-    ## 🔍 Key Patterns
-    [Specific patterns, trends, or relationships visible]
+    ## 🔍 Mô hình Chính
+    [Các mô hình, xu hướng hoặc mối quan hệ cụ thể có thể nhìn thấy]
     
-    ## 📈 Statistical Insights  
-    [Quantitative observations with actual numbers]
+    ## 📈 Thông tin Thống kê  
+    [Quan sát định lượng với số thực tế]
     
-    ## 💡 Business Value
-    [How this visualization helps business decisions]
+    ## 💡 Giá trị Kinh doanh
+    [Trực quan hóa này giúp quyết định kinh doanh như thế nào]
     
-    ## 🎯 Follow-up Suggestions
-    [What additional analyses would be valuable]
+    ## 🎯 Gợi ý Theo dõi
+    [Những phân tích bổ sung nào sẽ có giá trị]
     
-    Be specific and include actual column names and potential values.
-    Focus on actionable insights that stakeholders can use.
+    Hãy cụ thể và bao gồm tên cột thực tế và các giá trị tiềm năng.
+    Tập trung vào những thông tin có thể hành động mà các bên liên quan có thể sử dụng.
     """
     
     return llm.invoke(prompt)
@@ -156,34 +156,34 @@ def extract_enhanced_chart_insights(code: str, df: pd.DataFrame) -> str:
 datasets = get_all_datasets()
 if not datasets:
     render_feature_card(
-        "Welcome to VizGenie-GPT",
-        "Start by uploading your first dataset in the Dashboard page to begin advanced analytics.",
+        "Chào mừng đến với VizGenie-GPT",
+        "Bắt đầu bằng cách tải lên bộ dữ liệu đầu tiên của bạn trong trang Bảng điều khiển để bắt đầu phân tích nâng cao.",
         "👋",
-        "Go to Dashboard",
+        "Đi đến Bảng điều khiển",
         "dashboard"
     )
     st.stop()
 
 # Dataset selection with enhanced UI
-st.markdown("### 📂 Dataset Selection")
+st.markdown("### 📂 Lựa chọn Bộ dữ liệu")
 col1, col2, col3 = st.columns([2, 1, 1])
 
 with col1:
     dataset_options = {f"{d[0]} - {d[1]}": d[0] for d in datasets}
     selected = st.selectbox(
-        "Choose your dataset:",
+        "Chọn bộ dữ liệu của bạn:",
         list(dataset_options.keys()),
-        help="Select the dataset you want to analyze"
+        help="Chọn bộ dữ liệu bạn muốn phân tích"
     )
     dataset_id = dataset_options[selected]
     dataset = get_dataset(dataset_id)
 
 with col2:
-    if st.button("📊 Generate Data Story", type="primary", use_container_width=True):
+    if st.button("📊 Tạo Câu chuyện Dữ liệu", type="primary", use_container_width=True):
         st.session_state.generate_story = True
 
 with col3:
-    if st.button("🔍 Data Explorer", type="secondary", use_container_width=True):
+    if st.button("🔍 Khám phá Dữ liệu", type="secondary", use_container_width=True):
         st.session_state.show_explorer = True
 
 # Load and validate dataset
@@ -194,42 +194,42 @@ try:
     df = safe_read_csv(file_path)
     st.session_state.df = df
 except Exception as e:
-    st.error(f"❌ Error loading dataset: {e}")
+    st.error(f"❌ Lỗi khi tải bộ dữ liệu: {e}")
     st.stop()
 
 # Dataset metrics with professional cards
-st.markdown("### 📊 Dataset Overview")
+st.markdown("### 📊 Tổng quan Bộ dữ liệu")
 metrics = [
-    {"title": "Total Records", "value": f"{num_rows:,}", "delta": None},
-    {"title": "Columns", "value": str(num_cols), "delta": None},
-    {"title": "Numeric Fields", "value": str(df.select_dtypes(include=[np.number]).shape[1]), "delta": None},
-    {"title": "Missing Values", "value": f"{df.isnull().sum().sum():,}", "delta": None}
+    {"title": "Tổng số Bản ghi", "value": f"{num_rows:,}", "delta": None},
+    {"title": "Cột", "value": str(num_cols), "delta": None},
+    {"title": "Trường Số", "value": str(df.select_dtypes(include=[np.number]).shape[1]), "delta": None},
+    {"title": "Giá trị Thiếu", "value": f"{df.isnull().sum().sum():,}", "delta": None}
 ]
 
 render_metric_cards(metrics)
 
 # Data quality assessment
-st.markdown("### 🎯 Data Quality Assessment")
+st.markdown("### 🎯 Đánh giá Chất lượng Dữ liệu")
 quality_score = create_data_quality_indicator(df)
 
 if quality_score < 0.7:
-    render_status_indicator("Data Quality Needs Attention", "warning")
+    render_status_indicator("Chất lượng Dữ liệu Cần Chú ý", "warning")
 elif quality_score < 0.9:
-    render_status_indicator("Good Data Quality", "success")
+    render_status_indicator("Chất lượng Dữ liệu Tốt", "success")
 else:
-    render_status_indicator("Excellent Data Quality", "success")
+    render_status_indicator("Chất lượng Dữ liệu Tuyệt vời", "success")
 
 # AI Recommendations Panel
 create_ai_recommendation_panel(df)
 
 # Interactive Data Explorer (if requested)
 if st.session_state.get('show_explorer', False):
-    with st.expander("🔍 Interactive Data Explorer", expanded=True):
+    with st.expander("🔍 Khám phá Dữ liệu Tương tác", expanded=True):
         render_interactive_data_explorer(df)
     st.session_state.show_explorer = False
 
 # Chat session management with enhanced UI
-st.markdown("### 💬 AI Analysis Sessions")
+st.markdown("### 💬 Phiên Phân tích AI")
 
 # Session selection
 sessions = get_sessions_by_dataset(dataset_id)
@@ -238,60 +238,60 @@ session_titles = {f"{s[0]} - {s[1]} ({s[2]})": s[0] for s in sessions}
 col1, col2 = st.columns([3, 1])
 with col1:
     new_session_title = st.text_input(
-        "🆕 Create new analysis session:",
-        placeholder="e.g., Revenue Analysis, Customer Segmentation, Trend Discovery...",
-        help="Give your analysis session a descriptive name"
+        "🆕 Tạo phiên phân tích mới:",
+        placeholder="ví dụ: Phân tích Doanh thu, Phân khúc Khách hàng, Khám phá Xu hướng...",
+        help="Đặt tên mô tả cho phiên phân tích của bạn"
     )
 
 with col2:
-    session_type = st.radio("Session:", ("New", "Existing"), horizontal=True)
+    session_type = st.radio("Phiên:", ("Mới", "Hiện có"), horizontal=True)
 
-if session_type == "Existing" and sessions:
-    selected_session = st.selectbox("Select existing session:", list(session_titles.keys()))
+if session_type == "Hiện có" and sessions:
+    selected_session = st.selectbox("Chọn phiên hiện có:", list(session_titles.keys()))
     session_id = session_titles[selected_session]
     
     # Session management options
-    with st.expander("⚙️ Session Management"):
+    with st.expander("⚙️ Quản lý Phiên"):
         col1, col2 = st.columns(2)
         with col1:
-            rename_title = st.text_input("Rename session:")
-            if st.button("✏️ Rename") and rename_title:
+            rename_title = st.text_input("Đổi tên phiên:")
+            if st.button("✏️ Đổi tên") and rename_title:
                 rename_chat_session(session_id, rename_title)
-                st.success("✅ Session renamed!")
+                st.success("✅ Đã đổi tên phiên!")
                 st.rerun()
         
         with col2:
-            if st.button("🗑️ Delete Session", type="secondary"):
+            if st.button("🗑️ Xóa Phiên", type="secondary"):
                 delete_chat_session(session_id)
-                st.success("🗑️ Session deleted!")
+                st.success("🗑️ Đã xóa phiên!")
                 st.rerun()
 
 else:
     # Create new session
-    default_title = new_session_title or f"Analysis Session {len(sessions) + 1}"
+    default_title = new_session_title or f"Phiên Phân tích {len(sessions) + 1}"
     session_id = create_chat_session(dataset_id, default_title)
-    st.success(f"✅ Created session: **{default_title}**")
+    st.success(f"✅ Đã tạo phiên: **{default_title}**")
 
 # Load chat history
 chat_history = get_chat_messages(session_id)
 
 # Generate comprehensive data story if requested
 if st.session_state.get('generate_story', False):
-    with st.spinner("🤖 Generating comprehensive data story..."):
-        render_animated_loading("Analyzing your data and generating insights...")
+    with st.spinner("🤖 Đang tạo câu chuyện dữ liệu toàn diện..."):
+        render_animated_loading("Đang phân tích dữ liệu của bạn và tạo thông tin chi tiết...")
         
         story = generate_comprehensive_data_story(df, chat_history, dataset[1])
         
         render_insight_card(story)
         
         # Save story to chat history
-        add_chat_message(session_id, "assistant", f"**📖 Data Story Generated**\n\n{story}")
+        add_chat_message(session_id, "assistant", f"**📖 Đã Tạo Câu chuyện Dữ liệu**\n\n{story}")
         
     st.session_state.generate_story = False
 
 # Enhanced chat history display
 if chat_history:
-    st.markdown("### 🗨️ Conversation History")
+    st.markdown("### 🗨️ Lịch sử Trò chuyện")
     
     for idx, (msg_id, role, content, ts) in enumerate(chat_history):
         with st.chat_message(role):
@@ -299,16 +299,16 @@ if chat_history:
             
             with cols[0]:
                 # Enhanced message rendering
-                if role == "assistant" and "📖 Data Story" in content:
+                if role == "assistant" and "📖 Câu chuyện Dữ liệu" in content:
                     # Special rendering for data stories
-                    render_insight_card(content.replace("**📖 Data Story Generated**\n\n", ""))
+                    render_insight_card(content.replace("**📖 Đã Tạo Câu chuyện Dữ liệu**\n\n", ""))
                 else:
                     st.markdown(content)
             
             with cols[1]:
                 if role == "user":
                     with st.popover("⋮", use_container_width=True):
-                        if st.button("✏️ Edit", key=f"edit_{idx}"):
+                        if st.button("✏️ Chỉnh sửa", key=f"edit_{idx}"):
                             st.session_state.edited_prompt = content
                             # Delete this message and the next AI response
                             delete_chat_message(session_id, msg_id)
@@ -316,20 +316,20 @@ if chat_history:
                                 delete_chat_message(session_id, chat_history[idx + 1][0])
                             st.rerun()
                         
-                        if st.button("🗑️ Delete", key=f"del_{msg_id}"):
+                        if st.button("🗑️ Xóa", key=f"del_{msg_id}"):
                             delete_chat_message(session_id, msg_id)
                             # Also delete the AI response if it exists
                             if idx + 1 < len(chat_history) and chat_history[idx + 1][1] == "assistant":
                                 delete_chat_message(session_id, chat_history[idx + 1][0])
                             st.rerun()
                         
-                        if st.button("📋 Copy", key=f"copy_{idx}"):
+                        if st.button("📋 Sao chép", key=f"copy_{idx}"):
                             st.session_state.clipboard = content
-                            st.success("Copied to clipboard!")
+                            st.success("Đã sao chép vào clipboard!")
 
 # Smart query suggestions with enhanced UI
-st.markdown("### 💡 Smart Query Suggestions")
-with st.expander("🎯 Get Inspired - Sample Questions", expanded=False):
+st.markdown("### 💡 Gợi ý Truy vấn Thông minh")
+with st.expander("🎯 Lấy Cảm hứng - Câu hỏi Mẫu", expanded=False):
     
     # Dynamic suggestions based on data characteristics
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
@@ -338,14 +338,14 @@ with st.expander("🎯 Get Inspired - Sample Questions", expanded=False):
     col1, col2 = st.columns(2)
     
     with col1:
-        st.markdown("**📊 Data Analysis Questions:**")
+        st.markdown("**📊 Câu hỏi Phân tích Dữ liệu:**")
         
         analysis_suggestions = [
-            f"Show the distribution of {numeric_cols[0]}" if numeric_cols else "Analyze the data distribution",
-            f"What's the correlation between {numeric_cols[0]} and {numeric_cols[1]}?" if len(numeric_cols) >= 2 else "Find correlations in the data",
-            "Identify outliers and anomalies in the dataset",
-            f"Compare {numeric_cols[0]} across different {categorical_cols[0]} groups" if numeric_cols and categorical_cols else "Compare groups in the data",
-            "Create a comprehensive statistical summary"
+            f"Hiển thị phân phối của {numeric_cols[0]}" if numeric_cols else "Phân tích phân phối dữ liệu",
+            f"Mối tương quan giữa {numeric_cols[0]} và {numeric_cols[1]} là gì?" if len(numeric_cols) >= 2 else "Tìm tương quan trong dữ liệu",
+            "Xác định các giá trị ngoại lệ và bất thường trong bộ dữ liệu",
+            f"So sánh {numeric_cols[0]} giữa các nhóm {categorical_cols[0]} khác nhau" if numeric_cols and categorical_cols else "So sánh các nhóm trong dữ liệu",
+            "Tạo tóm tắt thống kê toàn diện"
         ]
         
         for suggestion in analysis_suggestions:
@@ -353,15 +353,15 @@ with st.expander("🎯 Get Inspired - Sample Questions", expanded=False):
                 st.session_state.suggested_prompt = suggestion
     
     with col2:
-        st.markdown("**🎯 Business Intelligence Questions:**")
+        st.markdown("**🎯 Câu hỏi Thông minh Kinh doanh:**")
         
         # Context-aware business questions
         business_questions = [
-            "What are the key performance indicators in this data?",
-            "Which factors have the strongest impact on outcomes?",
-            "Are there seasonal or time-based patterns?", 
-            "What segments or groups show the best performance?",
-            "What recommendations can you make based on this data?"
+            "Các chỉ số hiệu suất chính trong dữ liệu này là gì?",
+            "Những yếu tố nào có tác động mạnh nhất đến kết quả?",
+            "Có những mô hình theo mùa hoặc theo thời gian không?", 
+            "Những phân khúc hoặc nhóm nào cho thấy hiệu suất tốt nhất?",
+            "Bạn có thể đưa ra những khuyến nghị nào dựa trên dữ liệu này?"
         ]
         
         for question in business_questions:
@@ -369,26 +369,26 @@ with st.expander("🎯 Get Inspired - Sample Questions", expanded=False):
                 st.session_state.suggested_prompt = question
 
 # Enhanced chart type suggestions
-st.markdown("### 📈 Smart Chart Recommendations")
-with st.expander("🎨 AI-Suggested Visualizations", expanded=False):
+st.markdown("### 📈 Khuyến nghị Biểu đồ Thông minh")
+with st.expander("🎨 Trực quan hóa được AI Đề xuất", expanded=False):
     
     chart_recommendations = []
     
     if len(numeric_cols) >= 2:
         chart_recommendations.extend([
-            {"type": "Scatter Plot", "desc": f"Explore relationship between {numeric_cols[0]} and {numeric_cols[1]}", "icon": "🔵"},
-            {"type": "Correlation Heatmap", "desc": "Show all numeric correlations", "icon": "🔥"}
+            {"type": "Biểu đồ Phân tán", "desc": f"Khám phá mối quan hệ giữa {numeric_cols[0]} và {numeric_cols[1]}", "icon": "🔵"},
+            {"type": "Bản đồ Nhiệt Tương quan", "desc": "Hiển thị tất cả tương quan số", "icon": "🔥"}
         ])
     
     if categorical_cols and numeric_cols:
         chart_recommendations.extend([
-            {"type": "Box Plot", "desc": f"Compare {numeric_cols[0]} distribution by {categorical_cols[0]}", "icon": "📦"},
-            {"type": "Bar Chart", "desc": f"Show average {numeric_cols[0]} by {categorical_cols[0]}", "icon": "📊"}
+            {"type": "Biểu đồ Hộp", "desc": f"So sánh phân phối {numeric_cols[0]} theo {categorical_cols[0]}", "icon": "📦"},
+            {"type": "Biểu đồ Cột", "desc": f"Hiển thị trung bình {numeric_cols[0]} theo {categorical_cols[0]}", "icon": "📊"}
         ])
     
     if any('date' in col.lower() or 'time' in col.lower() for col in df.columns):
         chart_recommendations.append(
-            {"type": "Time Series", "desc": "Track changes over time", "icon": "📈"}
+            {"type": "Chuỗi Thời gian", "desc": "Theo dõi thay đổi theo thời gian", "icon": "📈"}
         )
     
     # Display recommendations in a grid
@@ -401,13 +401,13 @@ with st.expander("🎨 AI-Suggested Visualizations", expanded=False):
                     rec['desc'],
                     rec['icon']
                 )
-                if st.button(f"Create {rec['type']}", key=f"chart_rec_{i}", use_container_width=True):
-                    st.session_state.suggested_prompt = f"Create a {rec['type'].lower()} showing {rec['desc']}"
+                if st.button(f"Tạo {rec['type']}", key=f"chart_rec_{i}", use_container_width=True):
+                    st.session_state.suggested_prompt = f"Tạo một {rec['type'].lower()} hiển thị {rec['desc']}"
 
 # Main chat input with enhanced processing
 prompt = (st.session_state.pop("suggested_prompt", None) or 
           st.session_state.pop("edited_prompt", None) or 
-          st.chat_input("🤖 Ask anything about your data - I'll create beautiful visualizations and insights!"))
+          st.chat_input("🤖 Hỏi bất cứ điều gì về dữ liệu của bạn - Tôi sẽ tạo ra những trực quan hóa và thông tin đẹp mắt!"))
 
 if prompt:
     # Display user message
@@ -423,7 +423,7 @@ if prompt:
             enhanced_prompt = enhance_prompt_with_chart_suggestions(prompt, df)
             
             # Show processing indicator
-            with st.spinner("🧠 Analyzing your data with AI..."):
+            with st.spinner("🧠 Đang phân tích dữ liệu của bạn với AI..."):
                 response = agent.invoke(enhanced_prompt)
             
             # Extract execution details
@@ -444,7 +444,7 @@ if prompt:
                 chart_col, controls_col = st.columns([3, 1])
                 
                 with chart_col:
-                    st.markdown("#### 📊 Generated Visualization")
+                    st.markdown("#### 📊 Trực quan hóa được Tạo")
                     
                     # Execute and display chart
                     fig = execute_plt_code(patched_code, df)
@@ -452,17 +452,17 @@ if prompt:
                         st.pyplot(fig)
                         
                         # Generate enhanced insights
-                        with st.spinner("🔍 Extracting deep insights..."):
+                        with st.spinner("🔍 Đang trích xuất thông tin sâu..."):
                             chart_insights = extract_enhanced_chart_insights(patched_code, df)
                         
                         render_insight_card(chart_insights)
                 
                 with controls_col:
-                    st.markdown("#### 🎨 Chart Enhancements")
+                    st.markdown("#### 🎨 Cải tiến Biểu đồ")
                     
                     # Color scheme selector
                     color_scheme = st.selectbox(
-                        "Color Palette:",
+                        "Bảng Màu:",
                         list(ENHANCED_COLOR_SCHEMES.keys()),
                         index=0,
                         key=f"color_{len(chat_history)}"
@@ -470,72 +470,72 @@ if prompt:
                     
                     # Enhancement options
                     enhancements = st.multiselect(
-                        "Add Features:",
+                        "Thêm Tính năng:",
                         [
-                            "Add trend line",
-                            "Show data labels",
-                            "Add grid",
-                            "Use log scale", 
-                            "Highlight outliers",
-                            "Add annotations"
+                            "Thêm đường xu hướng",
+                            "Hiển thị nhãn dữ liệu",
+                            "Thêm lưới",
+                            "Sử dụng thang logarithm", 
+                            "Làm nổi bật ngoại lệ",
+                            "Thêm chú thích"
                         ],
                         key=f"enhance_{len(chat_history)}"
                     )
                     
                     # Apply enhancements
-                    if st.button("🔄 Apply Changes", key=f"apply_{len(chat_history)}"):
+                    if st.button("🔄 Áp dụng Thay đổi", key=f"apply_{len(chat_history)}"):
                         enhanced_code = apply_chart_enhancements(patched_code, color_scheme, enhancements)
                         fig_enhanced = execute_plt_code(enhanced_code, df)
                         if fig_enhanced:
                             with chart_col:
-                                st.markdown("#### ✨ Enhanced Visualization")
+                                st.markdown("#### ✨ Trực quan hóa được Cải tiến")
                                 st.pyplot(fig_enhanced)
                     
                     # Chart actions
-                    st.markdown("#### 💾 Chart Actions")
+                    st.markdown("#### 💾 Hành động Biểu đồ")
                     
-                    if st.button("Save to Gallery", key=f"save_{len(chat_history)}", use_container_width=True):
+                    if st.button("Lưu vào Thư viện", key=f"save_{len(chat_history)}", use_container_width=True):
                         add_chart_card(dataset_id, prompt, response["output"], patched_code)
-                        st.success("✅ Chart saved!")
+                        st.success("✅ Đã lưu biểu đồ!")
                     
-                    if st.button("Download PNG", key=f"download_{len(chat_history)}", use_container_width=True):
-                        st.info("📥 Download functionality would be implemented here")
+                    if st.button("Tải xuống PNG", key=f"download_{len(chat_history)}", use_container_width=True):
+                        st.info("📥 Chức năng tải xuống sẽ được triển khai ở đây")
                     
-                    if st.button("Share Chart", key=f"share_{len(chat_history)}", use_container_width=True):
-                        st.info("📤 Share functionality would be implemented here")
+                    if st.button("Chia sẻ Biểu đồ", key=f"share_{len(chat_history)}", use_container_width=True):
+                        st.info("📤 Chức năng chia sẻ sẽ được triển khai ở đây")
                 
                 # Code display with tabs
-                with st.expander("📋 View Generated Code", expanded=False):
-                    tab1, tab2 = st.tabs(["Enhanced Code", "Original AI Code"])
+                with st.expander("📋 Xem Code được Tạo", expanded=False):
+                    tab1, tab2 = st.tabs(["Code Cải tiến", "Code AI Gốc"])
                     
                     with tab1:
                         st.code(patched_code, language="python")
-                        st.caption("This code includes professional styling and smart data handling")
+                        st.caption("Code này bao gồm kiểu dáng chuyên nghiệp và xử lý dữ liệu thông minh")
                     
                     with tab2:
                         st.code(action_code, language="python") 
-                        st.caption("Original code generated by AI")
+                        st.caption("Code gốc được tạo bởi AI")
             
             # Handle Plotly charts
             elif action_code and ("plotly" in action_code or "px." in action_code):
-                st.markdown("#### 📊 Interactive Visualization")
+                st.markdown("#### 📊 Trực quan hóa Tương tác")
                 try:
                     exec_globals = {"df": df, "px": px, "go": go, "st": st}
                     exec(action_code, exec_globals)
                     
-                    render_insight_card("🎯 **Interactive Chart Created!** This Plotly visualization supports zooming, hovering, and interactive exploration.")
+                    render_insight_card("🎯 **Đã Tạo Biểu đồ Tương tác!** Trực quan hóa Plotly này hỗ trợ phóng to, di chuột và khám phá tương tác.")
                     
                 except Exception as e:
-                    st.error(f"❌ Error creating interactive chart: {e}")
+                    st.error(f"❌ Lỗi khi tạo biểu đồ tương tác: {e}")
         
         except Exception as e:
-            st.error(f"❌ Analysis failed: {e}")
+            st.error(f"❌ Phân tích thất bại: {e}")
             render_insight_card(
-                "💡 **Troubleshooting Tips:**\n"
-                "- Try rephrasing your question more specifically\n" 
-                "- Mention specific column names you want to analyze\n"
-                "- Ask for a particular type of chart or analysis\n"
-                "- Check if your data has the required columns for the analysis"
+                "💡 **Mẹo Khắc phục Sự cố:**\n"
+                "- Thử diễn đạt lại câu hỏi của bạn cụ thể hơn\n" 
+                "- Đề cập đến tên cột cụ thể bạn muốn phân tích\n"
+                "- Yêu cầu một loại biểu đồ hoặc phân tích cụ thể\n"
+                "- Kiểm tra xem dữ liệu của bạn có các cột cần thiết cho phân tích không"
             )
 
 # Professional sidebar with navigation and stats
@@ -543,19 +543,19 @@ with st.sidebar:
     st.markdown("""
     <div style="text-align: center; padding: 1rem 0; border-bottom: 1px solid #e1e5e9; margin-bottom: 1rem;">
         <h3 style="color: #667eea; margin: 0;">🧠 VizGenie-GPT</h3>
-        <small style="color: #666;">Professional Analytics Platform</small>
+        <small style="color: #666;">Nền tảng Phân tích Chuyên nghiệp</small>
     </div>
     """, unsafe_allow_html=True)
     
     # Quick navigation
-    st.markdown("### 🔗 Quick Navigation")
+    st.markdown("### 🔗 Điều hướng Nhanh")
     nav_buttons = [
-        ("📂 Dashboard", "pages/1_🧮_Dashboard.py"),
-        ("📊 Dataset Details", "pages/3_📂_Dataset_Details.py"), 
-        ("📈 Smart Charts", "pages/6_📈_Smart_Charts.py"),
-        ("🔗 Cross Analysis", "pages/7_🔗_Cross_Dataset_Analysis.py"),
-        ("📋 Chart History", "pages/4_📊_Charts_History.py"),
-        ("📄 EDA Report", "pages/5_📋_EDA Report.py")
+        ("📂 Bảng điều khiển", "pages/1_🧮_Bang_Dieu_Khien.py"),
+        ("📊 Chi tiết Bộ dữ liệu", "pages/3_📂_Chi_Tiet_Bo_Du_Lieu.py"), 
+        ("📈 Biểu đồ Thông minh", "pages/6_📈_Bieu_Do_Thong_Minh.py"),
+        ("🔗 Phân tích Chéo", "pages/7_🔗_Phan_Tich_Cheo_Du_Lieu.py"),
+        ("📋 Lịch sử Biểu đồ", "pages/4_📊_Lich_Su_Bieu_Do.py"),
+        ("📄 Báo cáo EDA", "pages/5_📋_Bao_Cao_EDA.py")
     ]
     
     for label, page in nav_buttons:
@@ -565,55 +565,55 @@ with st.sidebar:
     # Session statistics
     if chat_history:
         st.markdown("---")
-        st.markdown("### 📈 Session Stats")
+        st.markdown("### 📈 Thống kê Phiên")
         
         user_messages = [msg for msg in chat_history if msg[1] == "user"]
         charts_created = len([msg for msg in chat_history if "chart" in msg[2].lower() or "plot" in msg[2].lower()])
         
         render_metric_cards([
-            {"title": "Questions", "value": str(len(user_messages))},
-            {"title": "Charts", "value": str(charts_created)},
-            {"title": "Quality", "value": f"{quality_score:.0%}"}
+            {"title": "Câu hỏi", "value": str(len(user_messages))},
+            {"title": "Biểu đồ", "value": str(charts_created)},
+            {"title": "Chất lượng", "value": f"{quality_score:.0%}"}
         ])
         
         # Session summary
-        if st.button("📊 Generate Session Summary", use_container_width=True):
+        if st.button("📊 Tạo Tóm tắt Phiên", use_container_width=True):
             summary_prompt = f"""
-            Summarize this data analysis session in 3 key bullet points:
+            Tóm tắt phiên phân tích dữ liệu này trong 3 điểm chính:
             
-            Questions asked: {[msg[2] for msg in user_messages]}
-            Dataset: {dataset[1]} ({df.shape[0]} rows, {df.shape[1]} cols)
+            Câu hỏi đã hỏi: {[msg[2] for msg in user_messages]}
+            Bộ dữ liệu: {dataset[1]} ({df.shape[0]} hàng, {df.shape[1]} cột)
             
-            Focus on:
-            - Main areas of analysis explored
-            - Key insights discovered  
-            - Types of visualizations created
+            Tập trung vào:
+            - Các lĩnh vực phân tích chính đã khám phá
+            - Những thông tin chính đã khám phá  
+            - Các loại trực quan hóa đã tạo
             
-            Keep it concise and executive-friendly.
+            Giữ nó súc tích và thân thiện với điều hành.
             """
             
-            with st.spinner("Generating summary..."):
+            with st.spinner("Đang tạo tóm tắt..."):
                 summary = load_llm("gpt-3.5-turbo").invoke(summary_prompt)
-                render_insight_card(f"**📋 Session Summary**\n\n{summary}")
+                render_insight_card(f"**📋 Tóm tắt Phiên**\n\n{summary}")
     
     # Pro tips
     st.markdown("---")
-    st.markdown("### 💡 Pro Tips")
+    st.markdown("### 💡 Mẹo Chuyên nghiệp")
     st.markdown("""
-    **🎯 Better Questions:**
-    - Be specific about columns
-    - Ask for comparisons
-    - Request business insights
+    **🎯 Câu hỏi Tốt hơn:**
+    - Cụ thể về các cột
+    - Yêu cầu so sánh
+    - Yêu cầu thông tin kinh doanh
     
-    **📊 Chart Tips:**
-    - Try different color palettes
-    - Use enhancements for clarity
-    - Save charts you like
+    **📊 Mẹo Biểu đồ:**
+    - Thử các bảng màu khác nhau
+    - Sử dụng cải tiến để rõ ràng
+    - Lưu các biểu đồ bạn thích
     
-    **🤖 AI Features:**
-    - Generate data stories
-    - Get chart recommendations
-    - Ask follow-up questions
+    **🤖 Tính năng AI:**
+    - Tạo câu chuyện dữ liệu
+    - Nhận khuyến nghị biểu đồ
+    - Đặt câu hỏi tiếp theo
     """)
 
 # Footer with credits and version
@@ -621,13 +621,13 @@ st.markdown("---")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown("**🧠 VizGenie-GPT Professional**")
-    st.caption("Advanced AI Analytics Platform")
+    st.markdown("**🧠 VizGenie-GPT Chuyên nghiệp**")
+    st.caption("Nền tảng Phân tích AI Nâng cao")
 
 with col2:
-    st.markdown("**🔧 Version 2.0**")
-    st.caption("Enhanced with Professional UI")
+    st.markdown("**🔧 Phiên bản 2.0**")
+    st.caption("Cải tiến với Giao diện Chuyên nghiệp")
 
 with col3:
-    st.markdown("**👨‍💻 Made by Delay Group**")
-    st.caption("With ❤️ for data science")
+    st.markdown("**👨‍💻 Được tạo bởi Delay Group**")
+    st.caption("Với ❤️ cho khoa học dữ liệu")
