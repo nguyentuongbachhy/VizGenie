@@ -1,46 +1,16 @@
 # VizGenie-GPT: Professional AI-Powered Data Analysis Platform
 
 <div align="center">
-  <!-- Language Toggle Buttons -->
-  <div style="margin: 20px 0;">
-    <button onclick="showLanguage('en')" id="btn-en" style="background: #667eea; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-weight: bold;">English</button>
-    <button onclick="showLanguage('vi')" id="btn-vi" style="background: #e0e0e0; color: #333; border: none; padding: 10px 20px; margin: 5px; border-radius: 5px; cursor: pointer; font-weight: bold;">Tiếng Việt</button>
-  </div>
   
-  ![VizGenie logo](assets/img/logo.png)
+## 🌍 Language / Ngôn Ngữ
+
+📖 **[English Version](#english-version)** | 📖 **[Phiên Bản Tiếng Việt](#vietnamese-version)**
+
 </div>
-
-<script>
-function showLanguage(lang) {
-  // Hide all language sections
-  var sections = document.querySelectorAll('[class*="lang-"]');
-  sections.forEach(function(section) {
-    section.style.display = 'none';
-  });
-  
-  // Show selected language sections
-  var selectedSections = document.querySelectorAll('.lang-' + lang);
-  selectedSections.forEach(function(section) {
-    section.style.display = 'block';
-  });
-  
-  // Update button styles
-  document.getElementById('btn-en').style.background = lang === 'en' ? '#667eea' : '#e0e0e0';
-  document.getElementById('btn-en').style.color = lang === 'en' ? 'white' : '#333';
-  document.getElementById('btn-vi').style.background = lang === 'vi' ? '#667eea' : '#e0e0e0';
-  document.getElementById('btn-vi').style.color = lang === 'vi' ? 'white' : '#333';
-}
-
-// Show English by default
-document.addEventListener('DOMContentLoaded', function() {
-  showLanguage('en');
-});
-</script>
 
 ---
 
-<!-- ENGLISH VERSION -->
-<div class="lang-en">
+## English Version
 
 ## 🌟 Overview  
 
@@ -325,10 +295,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **Cloud Integration**: Direct connection to cloud data sources
 - **Custom Dashboards**: Personalized analytics dashboards
 
-</div>
+---
 
-<!-- VIETNAMESE VERSION -->
-<div class="lang-vi" style="display:none;">
+## Vietnamese Version
 
 ## 🌟 Tổng Quan  
 
@@ -598,8 +567,6 @@ Chúng tôi hoan nghênh đóng góp cho VizGenie-GPT! Vui lòng xem hướng d�
 - **Tích Hợp Cloud**: Kết nối trực tiếp với nguồn dữ liệu cloud
 - **Dashboard Tùy Chỉnh**: Dashboard analytics cá nhân hóa
 
-</div>
-
 ---
 
 <div align="center">
@@ -608,8 +575,8 @@ Chúng tôi hoan nghênh đóng góp cho VizGenie-GPT! Vui lòng xem hướng d�
 *Making Advanced Data Analysis Accessible to Everyone*  
 *Làm Cho Phân Tích Dữ Liệu Nâng Cao Trở Nên Dễ Tiếp Cận Với Mọi Người*
 
-Created with ❤️ by the Delay Group  
-Được tạo với ❤️ bởi Delay Group
+Created with ❤️ by VizGenie Team  
+Được tạo với ❤️ bởi VizGenie Team
 
 [🌟 Star us on GitHub](https://github.com/nguyentuongbachhy/VizGenie) | [📧 Contact Us](mailto:dangquach.dev@gmail.com) | [🐛 Report Issues](https://github.com/nguyentuongbachhy/VizGenie/issues)
 
