@@ -33,6 +33,7 @@ st.markdown("""
         box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     .chart-option {
+        color: black;
         background: #f8f9fa;
         padding: 1rem;
         border-radius: 8px;
@@ -526,8 +527,8 @@ if st.session_state.get('chart_generated', False):
         
         Hãy cụ thể và có thể hành động. Bao gồm các con số thực tế khi có thể.
         """
-        
-        insights = llm.invoke(insight_prompt)
+        response = llm.invoke(insight_prompt)
+        insights = response.content if hasattr(response, 'content') else str(response)
         
         st.markdown(f"""
         <div class="recommendation-card">
