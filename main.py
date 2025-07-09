@@ -258,7 +258,7 @@ def execute_chart_code_safely(code, df):
 def generate_chart_insights(rec, df):
     """Generate AI insights about the created chart"""
     try:
-        llm = load_llm("gpt-3.5-turbo")
+        llm = load_llm("gpt-4o")
         
         chart_type = rec.get('chart_type', 'unknown')
         title = rec.get('title', 'Chart Analysis')
@@ -488,7 +488,7 @@ def create_ai_recommendation_panel(df, analysis_history=None):
 
 def generate_comprehensive_data_story(df: pd.DataFrame, chat_history: list, dataset_name: str) -> str:
     """Tạo một câu chuyện dữ liệu toàn diện với thông tin kinh doanh"""
-    llm = load_llm("gpt-3.5-turbo")
+    llm = load_llm("gpt-4o")
     
     # Extract conversation patterns
     questions = [msg[2] for msg in chat_history if msg[1] == "user"][-10:]
@@ -547,7 +547,7 @@ def generate_comprehensive_data_story(df: pd.DataFrame, chat_history: list, data
 
 def extract_enhanced_chart_insights(code: str, df: pd.DataFrame) -> str:
     """Trích xuất thông tin chi tiết về biểu đồ được tạo"""
-    llm = load_llm("gpt-3.5-turbo")
+    llm = load_llm("gpt-4o")
     
     # Identify chart type from code
     chart_type = "Không xác định"
@@ -888,7 +888,7 @@ if prompt:
     with st.chat_message("assistant"):
         try:
             # Create agent with enhanced prompting
-            agent = create_agent_from_csv("gpt-3.5-turbo", file_path, return_steps=True)
+            agent = create_agent_from_csv("gpt-4o", file_path, return_steps=True)
             enhanced_prompt = enhance_prompt_with_chart_suggestions(prompt, df)
             
             # Show processing indicator
@@ -1089,7 +1089,7 @@ with st.sidebar:
             """
             
             with st.spinner("Đang tạo tóm tắt..."):
-                summary = load_llm("gpt-3.5-turbo").invoke(summary_prompt)
+                summary = load_llm("gpt-4o").invoke(summary_prompt)
                 # Use markdown instead of insight card
                 st.markdown(f"**📋 Tóm tắt Phiên**\n\n{summary}")
     

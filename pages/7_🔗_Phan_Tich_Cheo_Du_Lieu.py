@@ -86,7 +86,7 @@ st.markdown("""
 
 st.markdown('<div class="analysis-header"><h1>🔗 Phân Tích Mối Quan Hệ Chéo Bộ Dữ Liệu</h1><p>Khám phá các mẫu và mối quan hệ ẩn qua nhiều bộ dữ liệu với AI nâng cao</p></div>', unsafe_allow_html=True)
 
-llm = load_llm("gpt-3.5-turbo")
+llm = load_llm("gpt-4o")
 
 def show_loading(text="Đang xử lý..."):
     """Show loading animation"""

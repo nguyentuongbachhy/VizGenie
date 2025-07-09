@@ -18,7 +18,13 @@ def load_llm(model_name):
         ChatOpenAI: An instance of ChatOpenAI configured for the specified model.
     """
 
-    if model_name == "gpt-3.5-turbo":
+    if model_name == "gpt-4o":
+        return ChatOpenAI(
+            model=model_name,
+            temperature=0.0,
+            max_tokens=1500,
+        )
+    elif model_name == "gpt-3.5-turbo":
         return ChatOpenAI(
             model=model_name,
             temperature=0.0,
@@ -36,7 +42,7 @@ def load_llm(model_name):
     else:
         raise ValueError(
             "Unknown model.\
-                Please choose from ['gpt-3.5-turbo','gpt-4', ...]"
+                Please choose from ['gpt-4o', 'gpt-3.5-turbo','gpt-4', ...]"
         )
 
 

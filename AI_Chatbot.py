@@ -173,7 +173,7 @@ if prompt:
 
     with st.chat_message("assistant"):
         try:
-            agent = create_agent_from_csv("gpt-3.5-turbo", file_path, return_steps=True)
+            agent = create_agent_from_csv("gpt-4o", file_path, return_steps=True)
             prompt_to_send = enhance_prompt(prompt, df)
             response = agent(prompt_to_send)
             steps = response.get("intermediate_steps", [])

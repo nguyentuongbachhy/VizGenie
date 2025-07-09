@@ -15,7 +15,7 @@ st.set_page_config(page_title="Báo cáo EDA", layout="wide")
 st.title("🧠 Báo cáo Phân tích Khám phá Dữ liệu (EDA)")
 
 # LangChain LLM setup
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 def clean_and_fix_json(raw_response):
     """

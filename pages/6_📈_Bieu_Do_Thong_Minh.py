@@ -63,7 +63,7 @@ st.markdown("""
 
 st.markdown('<div class="chart-header"><h1>📈 Công Cụ Tạo Biểu Đồ Thông Minh AI</h1><p>Nhận đề xuất biểu đồ thông minh và tạo ra các trực quan hóa tuyệt đẹp</p></div>', unsafe_allow_html=True)
 
-llm = load_llm("gpt-3.5-turbo")
+llm = load_llm("gpt-4o")
 
 # Bảng màu chuyên nghiệp
 COLOR_PALETTES = {

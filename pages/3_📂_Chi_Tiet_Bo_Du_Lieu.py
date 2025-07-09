@@ -69,7 +69,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-llm = load_llm("gpt-3.5-turbo")
+    llm = load_llm("gpt-4o")
 
 # ---------- Helper functions with enhanced error handling ----------
 def safe_read_csv(file_path):
