@@ -103,7 +103,18 @@ def get_chart_recommendations(df, user_intent=""):
     
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     categorical_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
-    datetime_cols = [col for col in df.columns if 'date' in col.lower() or 'time' in col.lower()]
+    
+    # Tìm cột có thể là thời gian (bao gồm cả year)
+    datetime_cols = []
+    for col in df.columns:
+        if ('date' in col.lower() or 'time' in col.lower() or 
+            'year' in col.lower() or col.lower() == 'year'):
+            datetime_cols.append(col)
+        # Kiểm tra nếu cột số có giá trị năm (1900-2100)
+        elif (col in numeric_cols and 
+              df[col].min() >= 1900 and df[col].max() <= 2100 and 
+              df[col].nunique() < 50):
+            datetime_cols.append(col)
     
     recommendations = []
     
@@ -151,11 +162,18 @@ def get_chart_recommendations(df, user_intent=""):
         })
     
     if datetime_cols and numeric_cols:
+        # Ưu tiên cột year nếu có
+        time_col = datetime_cols[0]
+        for col in datetime_cols:
+            if 'year' in col.lower() or col.lower() == 'year':
+                time_col = col
+                break
+                
         recommendations.append({
             "type": "Chuỗi Thời Gian",
-            "description": "Theo dõi thay đổi theo thời gian",
+            "description": "Theo dõi thay đổi theo thời gian hoặc năm",
             "confidence": 0.95,
-            "suggested_x": datetime_cols[0],
+            "suggested_x": time_col,
             "suggested_y": numeric_cols[0],
             "icon": "📈",
             "color_scheme": "Đại Dương"
@@ -253,22 +271,57 @@ fig.show()
 """
     
     elif chart_type == "Chuỗi Thời Gian":
-        fig = px.line(df, x=x_col, y=y_col, color=color_col,
+        # Tạo bản sao để tránh thay đổi dữ liệu gốc
+        df_temp = df.copy()
+        
+        # Kiểm tra và xử lý dữ liệu thời gian
+        try:
+            # Nếu cột x chứa năm (year) thì sắp xếp theo năm
+            if 'year' in x_col.lower() or df_temp[x_col].dtype in ['int64', 'float64']:
+                df_temp = df_temp.sort_values(x_col)
+                # Nếu dữ liệu có nhiều giá trị cho cùng một năm, tính trung bình
+                if df_temp[x_col].duplicated().any():
+                    df_temp = df_temp.groupby(x_col)[y_col].mean().reset_index()
+            else:
+                # Thử chuyển đổi sang datetime
+                df_temp[x_col] = pd.to_datetime(df_temp[x_col])
+                df_temp = df_temp.sort_values(x_col)
+        except:
+            # Nếu không thể chuyển đổi, sắp xếp theo giá trị gốc
+            df_temp = df_temp.sort_values(x_col)
+        
+        fig = px.line(df_temp, x=x_col, y=y_col, color=color_col,
                      color_discrete_sequence=colors,
-                     title=f"Chuỗi Thời Gian: {y_col} theo {x_col}",
-                     template="plotly_white")
+                     title=f"Biểu Đồ Đường: {y_col} theo {x_col}",
+                     template="plotly_white",
+                     markers=True)  # Thêm markers để dễ nhìn hơn
         
         code = f"""
 import plotly.express as px
+import pandas as pd
 
-# Chuyển đổi sang datetime nếu cần
-df['{x_col}'] = pd.to_datetime(df['{x_col}'])
+# Tạo bản sao và xử lý dữ liệu
+df_temp = df.copy()
 
-fig = px.line(df, x='{x_col}', y='{y_col}',
+# Xử lý dữ liệu thời gian
+try:
+    if 'year' in '{x_col}'.lower() or df_temp['{x_col}'].dtype in ['int64', 'float64']:
+        df_temp = df_temp.sort_values('{x_col}')
+        # Tính trung bình nếu có nhiều giá trị cho cùng một năm
+        if df_temp['{x_col}'].duplicated().any():
+            df_temp = df_temp.groupby('{x_col}')['{y_col}'].mean().reset_index()
+    else:
+        df_temp['{x_col}'] = pd.to_datetime(df_temp['{x_col}'])
+        df_temp = df_temp.sort_values('{x_col}')
+except:
+    df_temp = df_temp.sort_values('{x_col}')
+
+fig = px.line(df_temp, x='{x_col}', y='{y_col}',
              color='{color_col}' if '{color_col}' != 'None' else None,
              color_discrete_sequence={colors},
-             title="Chuỗi Thời Gian: {y_col} theo {x_col}",
-             template="plotly_white")
+             title="Biểu Đồ Đường: {y_col} theo {x_col}",
+             template="plotly_white",
+             markers=True)
 fig.show()
 """
     
@@ -309,6 +362,40 @@ fig = px.pie(values=value_counts.values, names=value_counts.index,
             color_discrete_sequence={colors},
             title="Phân phối của {x_col}",
             template="plotly_white")
+fig.show()
+"""
+    
+    elif chart_type == "Biểu Đồ Violin":
+        fig = px.violin(df, x=x_col, y=y_col, color=color_col,
+                       color_discrete_sequence=colors,
+                       title=f"Biểu Đồ Violin: Phân phối {y_col} theo {x_col}",
+                       template="plotly_white")
+        
+        code = f"""
+import plotly.express as px
+
+fig = px.violin(df, x='{x_col}', y='{y_col}',
+               color='{color_col}' if '{color_col}' != 'None' else None,
+               color_discrete_sequence={colors},
+               title="Biểu Đồ Violin: Phân phối {y_col} theo {x_col}",
+               template="plotly_white")
+fig.show()
+"""
+    
+    elif chart_type == "Biểu Đồ Tần Suất":
+        fig = px.histogram(df, x=x_col, y=y_col, color=color_col,
+                          color_discrete_sequence=colors,
+                          title=f"Biểu Đồ Tần Suất: {x_col}",
+                          template="plotly_white")
+        
+        code = f"""
+import plotly.express as px
+
+fig = px.histogram(df, x='{x_col}', y='{y_col}' if '{y_col}' != '{x_col}' else None,
+                  color='{color_col}' if '{color_col}' != 'None' else None,
+                  color_discrete_sequence={colors},
+                  title="Biểu Đồ Tần Suất: {x_col}",
+                  template="plotly_white")
 fig.show()
 """
     

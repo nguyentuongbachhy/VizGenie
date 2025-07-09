@@ -206,38 +206,6 @@ PROFESSIONAL_CSS = """
         z-index: 1;
     }
     
-    /* Insight cards with enhanced styling */
-    .insight-card {
-        background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
-        border: 1px solid #667eea30;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 1rem 0;
-        position: relative;
-        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
-    }
-    
-    .insight-card::before {
-        content: '💡';
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-        font-size: 1.2rem;
-        background: #667eea;
-        padding: 0.3rem;
-        border-radius: 50%;
-        color: white;
-        width: 2rem;
-        height: 2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .insight-content {
-        margin-left: 3rem;
-    }
-    
     /* Enhanced button styling */
     .recommendation-button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -462,21 +430,21 @@ def render_feature_card(title: str, content: str, icon: str = "📊", action_tex
     ''', unsafe_allow_html=True)
 
 def render_insight_card(insight: str, confidence: float = None):
-    """Render an AI insight card with confidence indicator"""
+    """
+    Render an AI insight card - FIXED to use markdown instead of HTML
+    to avoid rendering issues with mixed content
+    """
     
-    confidence_html = ""
+    # Clean the insight text from any problematic characters
+    clean_insight = str(insight).strip()
+    
+    # Use streamlit's built-in info component instead of HTML
+    st.info(f"💡 **AI Insights**\n\n{clean_insight}")
+    
+    # If confidence is provided, show it separately
     if confidence:
-        confidence_color = "green" if confidence > 0.8 else "orange" if confidence > 0.6 else "red"
-        confidence_html = f'<div style="color: {confidence_color}; font-size: 0.8rem; margin-top: 0.5rem;">Confidence: {confidence:.1%}</div>'
-    
-    st.markdown(f'''
-    <div class="insight-card">
-        <div class="insight-content">
-            {insight}
-            {confidence_html}
-        </div>
-    </div>
-    ''', unsafe_allow_html=True)
+        confidence_color = "🟢" if confidence > 0.8 else "🟡" if confidence > 0.6 else "🔴"
+        st.caption(f"{confidence_color} Confidence: {confidence:.1%}")
 
 def render_status_indicator(text: str, status: str = "success"):
     """Render a status indicator badge"""

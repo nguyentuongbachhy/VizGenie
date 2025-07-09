@@ -17,14 +17,17 @@ matplotlib.use('Agg')  # Use non-interactive backend
 DB_NAME = "db.sqlite"
 
 def execute_plt_code(code: str, df: pd.DataFrame):
+    """FIXED: Execute matplotlib code without closing figures prematurely"""
     try:
-        # local_vars = {"plt": plt, "df": df}
         import seaborn as sns
         local_vars = {"plt": plt, "df": df, "sns": sns}
 
         compiled_code = compile(code, "<string>", "exec")
         exec(compiled_code, globals(), local_vars)
-        return plt.gcf()
+        
+        # Return the current figure without closing it
+        fig = plt.gcf()
+        return fig
     except Exception as e:
         st.error(f"Error executing plt code: {e}")
         return None

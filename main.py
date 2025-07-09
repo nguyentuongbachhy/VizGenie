@@ -236,14 +236,15 @@ def execute_chart_code_safely(code, df):
             'pd': pd
         }
         
-        # Clear any existing plots
+        # Clear any existing plots but don't create new figure yet
         plt.clf()
         
         # Execute the code
         exec(code, safe_globals)
         
-        # Return the current figure
-        return plt.gcf()
+        # Return the current figure without closing it
+        fig = plt.gcf()
+        return fig
         
     except Exception as e:
         # Create error figure
@@ -291,7 +292,7 @@ Phân tích visualization này và đưa ra 3-4 insights quan trọng:
 
 Vui lòng đưa ra insights bằng tiếng Việt với format:
 
-## 🔍 Insights Chính
+🔍 **Insights Chính**
 
 1. **Khám phá Mô hình**: [Những mô hình nào bạn thấy?]
 2. **Phát hiện Thống kê**: [Các con số cho chúng ta biết gì?] 
@@ -313,7 +314,7 @@ Giữ nó ngắn gọn nhưng có thể hành động.
             
     except Exception as e:
         return f"""
-## 🔍 Insights Chính
+🔍 **Insights Chính**
 
 1. **Biểu đồ Được tạo**: Đã tạo thành công {rec.get('title', 'visualization')}
 2. **Tổng quan Dữ liệu**: Dataset chứa {df.shape[0]:,} hàng và {df.shape[1]} cột
@@ -352,6 +353,7 @@ def generate_and_display_chart(rec, df):
         
         with st.spinner("🤖 Đang tạo insights..."):
             insights = generate_chart_insights(rec, df)
+            # Use normal markdown instead of insight card to avoid HTML issues
             st.markdown(insights)
         
         # Action buttons
@@ -576,19 +578,19 @@ def extract_enhanced_chart_insights(code: str, df: pd.DataFrame) -> str:
     
     Cung cấp thông tin chi tiết theo định dạng này:
     
-    ## 📊 Phân tích Biểu đồ
+    📊 **Phân tích Biểu đồ**
     [Biểu đồ này hiển thị gì và tại sao nó hữu ích]
     
-    ## 🔍 Mô hình Chính
+    🔍 **Mô hình Chính**
     [Các mô hình, xu hướng hoặc mối quan hệ cụ thể có thể nhìn thấy]
     
-    ## 📈 Thông tin Thống kê  
+    📈 **Thông tin Thống kê**  
     [Quan sát định lượng với số thực tế]
     
-    ## 💡 Giá trị Kinh doanh
+    💡 **Giá trị Kinh doanh**
     [Trực quan hóa này giúp quyết định kinh doanh như thế nào]
     
-    ## 🎯 Gợi ý Theo dõi
+    🎯 **Gợi ý Theo dõi**
     [Những phân tích bổ sung nào sẽ có giá trị]
     
     Hãy cụ thể và bao gồm tên cột thực tế và các giá trị tiềm năng.
@@ -729,7 +731,10 @@ else:
     session_id = create_chat_session(dataset_id, default_title)
     st.success(f"✅ Đã tạo phiên: **{default_title}**")
 
-# Load chat history
+# Store session_id for consistent chat history
+st.session_state.current_session_id = session_id
+
+# Load chat history - FIX: Always reload to ensure fresh data
 chat_history = get_chat_messages(session_id)
 
 # Generate comprehensive data story if requested
@@ -745,6 +750,8 @@ if st.session_state.get('generate_story', False):
         add_chat_message(session_id, "assistant", f"**📖 Đã Tạo Câu chuyện Dữ liệu**\n\n{story}")
         
     st.session_state.generate_story = False
+    # Force reload chat history after adding story
+    st.rerun()
 
 # Enhanced chat history display
 if chat_history:
@@ -755,10 +762,12 @@ if chat_history:
             cols = st.columns([10, 1])
             
             with cols[0]:
-                # Enhanced message rendering
+                # Enhanced message rendering - FIX: Better insight rendering
                 if role == "assistant" and "📖 Câu chuyện Dữ liệu" in content:
                     # Special rendering for data stories
-                    render_insight_card(content.replace("**📖 Đã Tạo Câu chuyện Dữ liệu**\n\n", ""))
+                    story_content = content.replace("**📖 Đã Tạo Câu chuyện Dữ liệu**\n\n", "")
+                    st.markdown("**📖 Câu chuyện Dữ liệu được tạo**")
+                    st.markdown(story_content)
                 else:
                     st.markdown(content)
             
@@ -872,6 +881,9 @@ if prompt:
         st.markdown(prompt)
     add_chat_message(session_id, "user", prompt)
     
+    # Track if charts were generated to control rerun behavior
+    chart_generated = False
+    
     # Enhanced AI response with professional styling
     with st.chat_message("assistant"):
         try:
@@ -891,11 +903,21 @@ if prompt:
             st.markdown(response["output"])
             add_chat_message(session_id, "assistant", response["output"])
             
-            # Enhanced chart processing
+            # Enhanced chart processing with session state caching
             if action_code and ("plt" in action_code or "seaborn" in action_code or "sns" in action_code):
+                chart_generated = True  # Mark that a chart was generated
                 
                 # Apply intelligent chart enhancements
                 patched_code = smart_patch_chart_code(action_code, df)
+                
+                # Store chart data in session state to prevent loss during rerun
+                chart_key = f"chart_{len(chat_history)}"
+                if chart_key not in st.session_state:
+                    st.session_state[chart_key] = {
+                        'code': patched_code,
+                        'insights': None,
+                        'generated': False
+                    }
                 
                 # Create chart layout
                 chart_col, controls_col = st.columns([3, 1])
@@ -907,12 +929,23 @@ if prompt:
                     fig = execute_plt_code(patched_code, df)
                     if fig:
                         st.pyplot(fig)
+                        # Don't close the figure immediately
                         
-                        # Generate enhanced insights
-                        with st.spinner("🔍 Đang trích xuất thông tin sâu..."):
-                            chart_insights = extract_enhanced_chart_insights(patched_code, df)
+                        # Generate insights only once and cache them
+                        if not st.session_state[chart_key]['generated']:
+                            try:
+                                with st.spinner("🔍 Đang trích xuất thông tin sâu..."):
+                                    chart_insights = extract_enhanced_chart_insights(patched_code, df)
+                                    st.session_state[chart_key]['insights'] = chart_insights
+                                    st.session_state[chart_key]['generated'] = True
+                            except Exception as e:
+                                st.session_state[chart_key]['insights'] = f"Lỗi tạo insights: {str(e)}"
+                                st.session_state[chart_key]['generated'] = True
                         
-                        render_insight_card(chart_insights)
+                        # Display cached insights
+                        if st.session_state[chart_key]['insights']:
+                            st.markdown("#### 🧠 AI Insights về Biểu đồ")
+                            st.markdown(st.session_state[chart_key]['insights'])
                 
                 with controls_col:
                     st.markdown("#### 🎨 Cải tiến Biểu đồ")
@@ -975,25 +1008,31 @@ if prompt:
             
             # Handle Plotly charts
             elif action_code and ("plotly" in action_code or "px." in action_code):
+                chart_generated = True  # Mark that a chart was generated
                 st.markdown("#### 📊 Trực quan hóa Tương tác")
                 try:
                     exec_globals = {"df": df, "px": px, "go": go, "st": st}
                     exec(action_code, exec_globals)
                     
-                    render_insight_card("🎯 **Đã Tạo Biểu đồ Tương tác!** Trực quan hóa Plotly này hỗ trợ phóng to, di chuột và khám phá tương tác.")
+                    st.markdown("🎯 **Đã Tạo Biểu đồ Tương tác!** Trực quan hóa Plotly này hỗ trợ phóng to, di chuột và khám phá tương tác.")
                     
                 except Exception as e:
                     st.error(f"❌ Lỗi khi tạo biểu đồ tương tác: {e}")
         
         except Exception as e:
             st.error(f"❌ Phân tích thất bại: {e}")
-            render_insight_card(
-                "💡 **Mẹo Khắc phục Sự cố:**\n"
-                "- Thử diễn đạt lại câu hỏi của bạn cụ thể hơn\n" 
-                "- Đề cập đến tên cột cụ thể bạn muốn phân tích\n"
-                "- Yêu cầu một loại biểu đồ hoặc phân tích cụ thể\n"
-                "- Kiểm tra xem dữ liệu của bạn có các cột cần thiết cho phân tích không"
-            )
+            st.markdown("""
+            💡 **Mẹo Khắc phục Sự cố:**
+            - Thử diễn đạt lại câu hỏi của bạn cụ thể hơn
+            - Đề cập đến tên cột cụ thể bạn muốn phân tích
+            - Yêu cầu một loại biểu đồ hoặc phân tích cụ thể
+            - Kiểm tra xem dữ liệu của bạn có các cột cần thiết cho phân tích không
+            """)
+    
+    # FIXED: Only rerun if no charts were generated to avoid chart disappearing
+    if not chart_generated:
+        # Only auto-rerun for text-only responses to refresh chat history
+        st.rerun()
 
 # Professional sidebar with navigation and stats
 with st.sidebar:
@@ -1051,7 +1090,8 @@ with st.sidebar:
             
             with st.spinner("Đang tạo tóm tắt..."):
                 summary = load_llm("gpt-3.5-turbo").invoke(summary_prompt)
-                render_insight_card(f"**📋 Tóm tắt Phiên**\n\n{summary}")
+                # Use markdown instead of insight card
+                st.markdown(f"**📋 Tóm tắt Phiên**\n\n{summary}")
     
     # Pro tips
     st.markdown("---")
